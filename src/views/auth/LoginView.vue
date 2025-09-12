@@ -88,6 +88,16 @@
                   </span>
                   <span v-else>Se connecter</span>
                 </button>
+
+                <!-- Lien vers l'inscription -->
+                <div class="text-center mt-3">
+                  <p class="text-muted mb-0">
+                    Vous n'avez pas de compte ?
+                    <router-link to="/register" class="text-primary text-decoration-none fw-medium">
+                      Créer un compte
+                    </router-link>
+                  </p>
+                </div>
               </form>
             </div>
           </div>

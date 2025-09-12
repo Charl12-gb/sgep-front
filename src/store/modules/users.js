@@ -28,11 +28,11 @@ const mutations = {
   },
   
   SET_USERS(state, users) {
-    state.users = users
+    state.users = Array.isArray(users) ? users : []
   },
 
   SET_ALL_USERS(state, users) {
-    state.all_users = users
+    state.all_users = Array.isArray(users) ? users : []
   },
 
   SET_PAGINATION(state, pagination) {
@@ -63,9 +63,51 @@ const actions = {
       
       api.get(`/users?page=${page}&limit=${limit}&search=${search}`)
         .then((response) => {
-          const { users, total_items, total_pages, current_page, has_next, has_previous } = response.data
-          commit('SET_USERS', users)
-          commit('SET_PAGINATION', { total_items, total_pages, current_page, has_next, has_previous })
+          console.log('API Response:', response.data)
+          
+          // L'API peut retourner différentes structures selon le backend
+          let users = []
+          let pagination = {}
+          
+          if (response.data) {
+            // Structure PaginatedResponse
+            if (response.data.items) {
+              users = response.data.items
+              pagination = {
+                total_items: response.data.total || 0,
+                total_pages: response.data.pages || 1,
+                current_page: response.data.page || 1,
+                has_next: response.data.has_next || false,
+                has_previous: response.data.has_prev || false
+              }
+            }
+            // Structure simple avec users
+            else if (response.data.users) {
+              users = response.data.users
+              pagination = {
+                total_items: response.data.total_items || 0,
+                total_pages: response.data.total_pages || 1,
+                current_page: response.data.current_page || 1,
+                has_next: response.data.has_next || false,
+                has_previous: response.data.has_previous || false
+              }
+            }
+            // Liste directe d'utilisateurs
+            else if (Array.isArray(response.data)) {
+              users = response.data
+              pagination = {
+                total_items: response.data.length,
+                total_pages: 1,
+                current_page: 1,
+                has_next: false,
+                has_previous: false
+              }
+            }
+          }
+          
+          console.log('Parsed users:', users)
+          commit('SET_USERS', users || [])
+          commit('SET_PAGINATION', pagination)
           commit('SET_LOADING', false)
           resolve(response.data)
         })
@@ -83,17 +125,28 @@ const actions = {
       commit('SET_LOADING', true)
       commit('CLEAR_ERROR')
 
+      console.log('Fetching users from /users/all...')
+      
       api.get('/users/all')
         .then((response) => {
-          commit('SET_ALL_USERS', response.data)
+          console.log('Raw API response for /users/all:', response)
+          console.log('Response data:', response.data)
+          
+          const users = Array.isArray(response.data) ? response.data : []
+          console.log('Processed users:', users)
+          
+          commit('SET_ALL_USERS', users)
           commit('SET_LOADING', false)
           resolve(response.data)
         })
         .catch((error) => {
+          console.error('Error fetching all users:', error)
+          console.error('Error response:', error.response)
+          
           const message = error.response?.data?.detail || 'Erreur lors de la récupération des utilisateurs'
           commit('SET_ERROR', message)
           commit('SET_LOADING', false)
-          reject(error?.response?.data)
+          reject(error?.response?.data || error)
         })
     })
   },
@@ -274,31 +327,50 @@ const actions = {
           reject(error?.response?.data)
         })
     })
+  },
+
+  getUserById({ commit }, userId) {
+    return new Promise((resolve, reject) => {
+      commit('SET_LOADING', true)
+      commit('CLEAR_ERROR')
+      
+      api.get(`/users/${userId}`)
+        .then((response) => {
+          commit('SET_LOADING', false)
+          resolve(response.data)
+        })
+        .catch((error) => {
+          const message = error.response?.data?.detail || 'Erreur lors de la récupération de l\'utilisateur'
+          commit('SET_ERROR', message)
+          commit('SET_LOADING', false)
+          reject(error?.response?.data)
+        })
+    })
   }
 }
 
 const getters = {
-  users: state => state.users,
-  all_users: state => state.all_users,
+  users: state => state.users || [],
+  all_users: state => state.all_users || [],
   loading: state => state.loading,
   error: state => state.error,
   pagination: state => state.pagination,
   
   getUserById: (state) => (id) => {
-    return state.users.find(user => user.id === id)
+    return (state.users || []).find(user => user.id === id)
   },
   
   getUsersByRole: (state) => (roleName) => {
-    return state.users.filter(user => user.role?.name === roleName)
+    return (state.users || []).filter(user => user.role?.name === roleName)
   },
   
-  activeUsers: state => state.users.filter(user => user.is_active),
+  activeUsers: state => (state.users || []).filter(user => user.is_active),
   
-  inactiveUsers: state => state.users.filter(user => !user.is_active),
+  inactiveUsers: state => (state.users || []).filter(user => !user.is_active),
   
-  usersCount: state => state.users.length,
+  usersCount: state => (state.users || []).length,
   
-  hasUsers: state => state.users.length > 0
+  hasUsers: state => (state.users || []).length > 0
 }
 
 export default {

@@ -42,9 +42,9 @@
                 </a>
                 <ul v-show="dropdowns.admin" class="dropdown-menu show">
                   <li><router-link to="/users" class="dropdown-item">Utilisateurs</router-link></li>
-                  <li><router-link to="/roles" class="dropdown-item">Rôles</router-link></li>
+                  <!-- <li><router-link to="/roles" class="dropdown-item">Rôles</router-link></li>
                   <li><router-link to="/permissions" class="dropdown-item">Permissions</router-link></li>
-                  <li><router-link to="/settings" class="dropdown-item">Paramètres</router-link></li>
+                  <li><router-link to="/settings" class="dropdown-item">Paramètres</router-link></li> -->
                 </ul>
               </li>
             </ul>
@@ -204,9 +204,9 @@
               </a>
               <ul v-if="mobileSubmenus.admin" class="list-unstyled ms-4 mt-2">
                 <li><router-link to="/users" class="mobile-submenu-link" @click="closeMobileMenu">Utilisateurs</router-link></li>
-                <li><router-link to="/roles" class="mobile-submenu-link" @click="closeMobileMenu">Rôles</router-link></li>
+                <!-- <li><router-link to="/roles" class="mobile-submenu-link" @click="closeMobileMenu">Rôles</router-link></li>
                 <li><router-link to="/permissions" class="mobile-submenu-link" @click="closeMobileMenu">Permissions</router-link></li>
-                <li><router-link to="/settings" class="mobile-submenu-link" @click="closeMobileMenu">Paramètres</router-link></li>
+                <li><router-link to="/settings" class="mobile-submenu-link" @click="closeMobileMenu">Paramètres</router-link></li> -->
               </ul>
             </li>
           </ul>

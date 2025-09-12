@@ -10,6 +10,15 @@ const authRoutes = [
     }
   },
   {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/auth/RegisterView.vue'),
+    meta: { 
+      layout: 'auth',
+      requiresAuth: false 
+    }
+  },
+  {
     path: '/forgot-password',
     name: 'ForgotPassword',
     component: () => import('@/views/auth/ForgotPasswordView.vue'),
@@ -109,16 +118,6 @@ const adminRoutes = [
     }
   },
   {
-    path: '/users/create',
-    name: 'UsersCreate',
-    component: () => import('@/views/admin/UsersCreateView.vue'),
-    meta: { 
-      requiresAuth: true,
-      permissions: ['manage_users'],
-      breadcrumb: 'Créer un utilisateur'
-    }
-  },
-  {
     path: '/admin/users/create',
     name: 'AdminUsersCreate',
     component: () => import('@/views/admin/UsersCreateView.vue'),
@@ -129,8 +128,8 @@ const adminRoutes = [
     }
   },
   {
-    path: '/users/:id/edit',
-    name: 'UsersEdit',
+    path: '/admin/users/:id/edit',
+    name: 'AdminUsersEdit',
     component: () => import('@/views/admin/UsersEditView.vue'),
     meta: { 
       requiresAuth: true,
@@ -139,13 +138,13 @@ const adminRoutes = [
     }
   },
   {
-    path: '/admin/users/:id/edit',
-    name: 'AdminUsersEdit',
-    component: () => import('@/views/admin/UsersEditView.vue'),
+    path: '/admin/users/:id/activate',
+    name: 'AdminUsersActivate',
+    component: () => import('@/views/admin/UsersActivateView.vue'),
     meta: { 
       requiresAuth: true,
       permissions: ['manage_users'],
-      breadcrumb: 'Modifier l\'utilisateur'
+      breadcrumb: 'Activer l\'utilisateur'
     }
   },
   {
