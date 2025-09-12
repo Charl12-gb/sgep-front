@@ -1,0 +1,455 @@
+/* ==============================================
+   SGEP Custom CSS - Theme Bootstrap personnalisé
+   ============================================== */
+
+/* === VARIABLES CSS PERSONNALISÉES === */
+:root {
+  /* Couleurs principales */
+  --sgep-primary: #667eea;
+  --sgep-primary-dark: #5a67d8;
+  --sgep-primary-light: #e2e8ff;
+  
+  --sgep-secondary: #718096;
+  --sgep-success: #48bb78;
+  --sgep-warning: #ed8936;
+  --sgep-danger: #f56565;
+  --sgep-info: #4299e1;
+  
+  /* Couleurs grises */
+  --sgep-gray-50: #f9fafb;
+  --sgep-gray-100: #f7fafc;
+  --sgep-gray-200: #edf2f7;
+  --sgep-gray-300: #e2e8f0;
+  --sgep-gray-400: #cbd5e0;
+  --sgep-gray-500: #a0aec0;
+  --sgep-gray-600: #718096;
+  --sgep-gray-700: #4a5568;
+  --sgep-gray-800: #2d3748;
+  --sgep-gray-900: #1a202c;
+  
+  /* Ombres */
+  --sgep-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --sgep-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --sgep-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --sgep-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Bordures et rayons */
+  --sgep-radius-sm: 4px;
+  --sgep-radius-md: 8px;
+  --sgep-radius-lg: 12px;
+  --sgep-radius-xl: 16px;
+  
+  /* Transitions */
+  --sgep-transition: all 0.2s ease-in-out;
+}
+
+/* === OVERRIDE DES COULEURS BOOTSTRAP === */
+.bg-primary { background-color: var(--sgep-primary) !important; }
+.text-primary { color: var(--sgep-primary) !important; }
+.border-primary { border-color: var(--sgep-primary) !important; }
+
+.btn-primary {
+  background-color: var(--sgep-primary);
+  border-color: var(--sgep-primary);
+}
+.btn-primary:hover {
+  background-color: var(--sgep-primary-dark);
+  border-color: var(--sgep-primary-dark);
+}
+
+.btn-outline-primary {
+  color: var(--sgep-primary);
+  border-color: var(--sgep-primary);
+}
+.btn-outline-primary:hover {
+  background-color: var(--sgep-primary);
+  border-color: var(--sgep-primary);
+}
+
+/* === CLASSES UTILITAIRES SGEP === */
+
+/* Backgrounds avec gradient */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--sgep-primary) 0%, var(--sgep-primary-dark) 100%) !important;
+}
+
+.bg-gradient-success {
+  background: linear-gradient(135deg, var(--sgep-success) 0%, #38a169 100%) !important;
+}
+
+.bg-gradient-warning {
+  background: linear-gradient(135deg, var(--sgep-warning) 0%, #dd6b20 100%) !important;
+}
+
+.bg-gradient-info {
+  background: linear-gradient(135deg, var(--sgep-info) 0%, #3182ce 100%) !important;
+}
+
+/* Cartes avec ombres personnalisées */
+.card-sgep {
+  border: none;
+  border-radius: var(--sgep-radius-lg);
+  box-shadow: var(--sgep-shadow-md);
+  transition: var(--sgep-transition);
+}
+
+.card-sgep:hover {
+  box-shadow: var(--sgep-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card-sgep-xl {
+  box-shadow: var(--sgep-shadow-xl);
+}
+
+/* Boutons améliorés */
+.btn-sgep {
+  border-radius: var(--sgep-radius-md);
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  transition: var(--sgep-transition);
+  border: none;
+}
+
+.btn-sgep:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sgep-shadow-md);
+}
+
+.btn-sgep-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-sgep-lg {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+}
+
+/* Statut badges */
+.badge-status {
+  padding: 0.5rem 1rem;
+  border-radius: var(--sgep-radius-lg);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.badge-status.active {
+  background: rgba(72, 187, 120, 0.1);
+  color: var(--sgep-success);
+}
+
+.badge-status.inactive {
+  background: rgba(160, 174, 192, 0.1);
+  color: var(--sgep-gray-600);
+}
+
+.badge-status.pending {
+  background: rgba(237, 137, 54, 0.1);
+  color: var(--sgep-warning);
+}
+
+.badge-status.error {
+  background: rgba(245, 101, 101, 0.1);
+  color: var(--sgep-danger);
+}
+
+/* Inputs et formulaires */
+.form-control-sgep {
+  border: 1px solid var(--sgep-gray-300);
+  border-radius: var(--sgep-radius-md);
+  transition: var(--sgep-transition);
+}
+
+.form-control-sgep:focus {
+  border-color: var(--sgep-primary);
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-label-sgep {
+  font-weight: 500;
+  color: var(--sgep-gray-700);
+  margin-bottom: 0.5rem;
+}
+
+/* Tables stylisées */
+.table-sgep {
+  border-radius: var(--sgep-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--sgep-shadow-sm);
+}
+
+.table-sgep thead th {
+  background: var(--sgep-gray-50);
+  border: none;
+  font-weight: 600;
+  color: var(--sgep-gray-700);
+  padding: 1rem;
+}
+
+.table-sgep tbody td {
+  border: none;
+  padding: 1rem;
+  border-bottom: 1px solid var(--sgep-gray-100);
+}
+
+.table-sgep tbody tr:hover {
+  background: var(--sgep-gray-50);
+}
+
+/* Navigation et sidebar */
+.nav-sgep {
+  background: white;
+  box-shadow: var(--sgep-shadow-sm);
+  border-radius: var(--sgep-radius-lg);
+}
+
+.nav-sgep .nav-link {
+  color: var(--sgep-gray-600);
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: var(--sgep-radius-md);
+  transition: var(--sgep-transition);
+}
+
+.nav-sgep .nav-link:hover,
+.nav-sgep .nav-link.active {
+  color: var(--sgep-primary);
+  background: var(--sgep-primary-light);
+}
+
+/* Alertes personnalisées */
+.alert-sgep {
+  border: none;
+  border-radius: var(--sgep-radius-lg);
+  border-left: 4px solid;
+  padding: 1rem 1.5rem;
+}
+
+.alert-sgep.alert-primary {
+  background: var(--sgep-primary-light);
+  border-left-color: var(--sgep-primary);
+  color: var(--sgep-primary-dark);
+}
+
+.alert-sgep.alert-success {
+  background: rgba(72, 187, 120, 0.1);
+  border-left-color: var(--sgep-success);
+  color: #2f855a;
+}
+
+.alert-sgep.alert-warning {
+  background: rgba(237, 137, 54, 0.1);
+  border-left-color: var(--sgep-warning);
+  color: #c05621;
+}
+
+.alert-sgep.alert-danger {
+  background: rgba(245, 101, 101, 0.1);
+  border-left-color: var(--sgep-danger);
+  color: #c53030;
+}
+
+/* Modales */
+.modal-sgep .modal-content {
+  border: none;
+  border-radius: var(--sgep-radius-xl);
+  box-shadow: var(--sgep-shadow-xl);
+}
+
+.modal-sgep .modal-header {
+  border-bottom: 1px solid var(--sgep-gray-200);
+  padding: 1.5rem;
+}
+
+.modal-sgep .modal-body {
+  padding: 1.5rem;
+}
+
+.modal-sgep .modal-footer {
+  border-top: 1px solid var(--sgep-gray-200);
+  padding: 1.5rem;
+}
+
+/* Loading states */
+.loading-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--sgep-gray-600);
+}
+
+.loading-spinner .spinner-border {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.125rem;
+}
+
+/* États vides */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--sgep-gray-500);
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h4 {
+  color: var(--sgep-gray-700);
+  margin-bottom: 0.5rem;
+}
+
+/* Système de grid custom */
+.grid-sgep {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.grid-sgep-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-sgep-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-sgep-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+  .grid-sgep-2,
+  .grid-sgep-3,
+  .grid-sgep-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Utilitaires de texte */
+.text-gradient-primary {
+  background: linear-gradient(135deg, var(--sgep-primary), var(--sgep-primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Effets hover */
+.hover-lift {
+  transition: var(--sgep-transition);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sgep-shadow-lg);
+}
+
+/* Séparateurs */
+.divider-sgep {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sgep-gray-300), transparent);
+  margin: 2rem 0;
+}
+
+/* Icônes colorées */
+.icon-primary { color: var(--sgep-primary); }
+.icon-success { color: var(--sgep-success); }
+.icon-warning { color: var(--sgep-warning); }
+.icon-danger { color: var(--sgep-danger); }
+.icon-info { color: var(--sgep-info); }
+
+/* Responsive utilities */
+@media (max-width: 576px) {
+  .btn-sgep {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card-sgep {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+  .card-sgep { box-shadow: none; border: 1px solid var(--sgep-gray-300); }
+}
+
+/* === CLASSES SPÉCIFIQUES DASHBOARD === */
+.dashboard-card {
+  background: white;
+  border-radius: var(--sgep-radius-lg);
+  box-shadow: var(--sgep-shadow-md);
+  transition: var(--sgep-transition);
+  border-left: 4px solid var(--sgep-primary);
+  overflow: hidden;
+}
+
+.dashboard-card:hover {
+  box-shadow: var(--sgep-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.dashboard-header {
+  background: linear-gradient(135deg, var(--sgep-primary), var(--sgep-primary-dark));
+  color: white;
+  padding: 2rem;
+  border-radius: var(--sgep-radius-lg);
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 2rem;
+  border-radius: var(--sgep-radius-lg);
+  box-shadow: var(--sgep-shadow-md);
+  border-left: 4px solid;
+  transition: var(--sgep-transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sgep-shadow-lg);
+}
+
+.stat-card.primary { border-left-color: var(--sgep-primary); }
+.stat-card.success { border-left-color: var(--sgep-success); }
+.stat-card.warning { border-left-color: var(--sgep-warning); }
+.stat-card.info { border-left-color: var(--sgep-info); }
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 1200px) {
+  .dashboard-header { padding: 1.5rem; }
+  .stat-card { padding: 1.5rem; }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header { padding: 1rem; }
+  .stat-card { padding: 1rem; }
+  .grid-sgep { gap: 1rem; }
+}
+
+/* Dark mode support (optionnel) */
+@media (prefers-color-scheme: dark) {
+  .card-sgep {
+    background: var(--sgep-gray-800);
+    color: var(--sgep-gray-100);
+  }
+  
+  .table-sgep {
+    background: var(--sgep-gray-800);
+    color: var(--sgep-gray-100);
+  }
+}
