@@ -1,8 +1,8 @@
 <template>
-  <div class="auth-page d-flex align-items-center min-vh-100">
+  <div class="auth-page d-flex align-items-center">
     <div class="container">
       <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6 col-xl-5">
+        <div class="col-sm-8">
           <div class="card shadow-lg border-0">
             <div class="card-body p-5">
               <!-- Header avec logo et titre -->
@@ -93,20 +93,39 @@
                   </div>
                 </div>
 
-                <!-- Nom d'utilisateur -->
-                <div class="mb-3">
-                  <label for="username" class="form-label">Nom d'utilisateur <span class="text-danger">*</span></label>
-                  <input
-                    id="username"
-                    v-model="form.username"
-                    type="text"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.username }"
-                    placeholder="nom.utilisateur"
-                    required
-                  />
-                  <div v-if="errors.username" class="invalid-feedback">
-                    {{ errors.username }}
+                <!-- Nom d'utilisateur and sexe -->
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label for="username" class="form-label">Nom d'utilisateur <span class="text-danger">*</span></label>
+                    <input
+                      id="username"
+                      v-model="form.username"
+                      type="text"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.username }"
+                      placeholder="nom.utilisateur"
+                      required
+                    />
+                    <div v-if="errors.username" class="invalid-feedback">
+                      {{ errors.username }}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="sexe" class="form-label">Sexe <span class="text-danger">*</span></label>
+                    <select
+                      id="sexe"
+                      v-model="form.sexe"
+                      class="form-select"
+                      :class="{ 'is-invalid': errors.sexe }"
+                      required
+                    >
+                      <option value="" disabled>Choisissez votre sexe</option>
+                      <option value="Homme">Homme</option>
+                      <option value="Femme">Femme</option>
+                    </select>
+                    <div v-if="errors.sexe" class="invalid-feedback">
+                      {{ errors.sexe }}
+                    </div>
                   </div>
                 </div>
 
@@ -173,7 +192,7 @@
                     v-model="form.entityId"
                     class="form-select"
                     :class="{ 'is-invalid': errors.entityId }"
-                    @change="loadBoardDirectors"
+                    @change="loadBoardCouncils"
                     required
                   >
                     <option value="">Sélectionnez votre entité</option>
@@ -191,37 +210,37 @@
                 </div>
 
                 <!-- Sélection du directeur du conseil -->
-                <div v-if="form.entityId && boardDirectors.length > 0" class="mb-4">
-                  <label for="boardDirector" class="form-label">Directeur de conseil de référence <span class="text-danger">*</span></label>
+                <div v-if="form.entityId && boardCouncils?.length > 0" class="mb-4">
+                  <label for="boardDirector" class="form-label">Mandat de conseil <span class="text-danger">*</span></label>
                   <select
                     id="boardDirector"
-                    v-model="form.boardDirectorId"
+                    v-model="form.boardCouncilId"
                     class="form-select"
-                    :class="{ 'is-invalid': errors.boardDirectorId }"
+                    :class="{ 'is-invalid': errors.boardCouncilId }"
                     required
                   >
-                    <option value="">Sélectionnez un directeur de conseil</option>
+                    <option value="">Sélectionnez un mandat de conseil</option>
                     <option
-                      v-for="director in boardDirectors"
-                      :key="director.id"
-                      :value="director.id"
+                      v-for="boardCouncil in boardCouncils"
+                      :key="boardCouncil.id"
+                      :value="boardCouncil.id"
                     >
-                      {{ director.nom_prenom }} - {{ director.fonction || 'Membre du conseil' }}
+                      {{ boardCouncil.start_date }} - {{ boardCouncil.end_date }} 
                     </option>
                   </select>
-                  <div v-if="errors.boardDirectorId" class="invalid-feedback">
-                    {{ errors.boardDirectorId }}
+                  <div v-if="errors.boardCouncilId" class="invalid-feedback">
+                    {{ errors.boardCouncilId }}
                   </div>
                   <div class="form-text">
-                    Choisissez le directeur de conseil qui supervisera votre demande d'accès.
+                    Choisissez un mandat.
                   </div>
                 </div>
 
                 <!-- Message d'attente si aucun directeur -->
-                <div v-else-if="form.entityId && boardDirectors.length === 0" class="mb-4">
+                <div v-else-if="form.entityId && boardCouncils?.length === 0" class="mb-4">
                   <div class="alert alert-warning" role="alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    Aucun directeur de conseil n'est configuré pour cette entité. 
+                    Aucun mandat n'est configuré pour cette entité. 
                     Veuillez contacter l'administrateur système.
                   </div>
                 </div>
@@ -325,7 +344,7 @@ export default {
     const showConfirmPassword = ref(false)
     
     const entities = ref([])
-    const boardDirectors = ref([])
+    const boardCouncils = ref([])
     
     const form = ref({
       firstName: '',
@@ -333,10 +352,11 @@ export default {
       email: '',
       phoneNumber: '',
       username: '',
+      sexe: '',
       password: '',
       confirmPassword: '',
       entityId: '',
-      boardDirectorId: '',
+      boardCouncilId: '',
       justification: '',
       acceptTerms: false
     })
@@ -348,10 +368,11 @@ export default {
              form.value.lastName &&
              form.value.email &&
              form.value.username &&
+             form.value.sexe &&
              form.value.password &&
              form.value.confirmPassword &&
              form.value.entityId &&
-             form.value.boardDirectorId &&
+             form.value.boardCouncilId &&
              form.value.justification &&
              form.value.acceptTerms &&
              form.value.password === form.value.confirmPassword
@@ -370,89 +391,35 @@ export default {
       } catch (error) {
         console.error('Erreur lors du chargement des entités:', error)
         notifyError('Erreur lors du chargement des entités')
-        
-        // Fallback avec des données simulées en cas d'erreur API
-        entities.value = [
-          {
-            id: '1',
-            name: 'Office National du Tourisme',
-            sigle: 'ONT',
-            type: 'Establishment'
-          },
-          {
-            id: '2', 
-            name: 'Société Béninoise d\'Électricité',
-            sigle: 'SBEE',
-            type: 'Society'
-          },
-          {
-            id: '3',
-            name: 'Port Autonome de Cotonou',
-            sigle: 'PAC',
-            type: 'Establishment'
-          }
-        ]
+        entities.value = []
       }
     }
     
-    const loadBoardDirectors = async () => {
+    const loadBoardCouncils = async () => {
       if (!form.value.entityId) {
-        boardDirectors.value = []
+        boardCouncils.value = []
         return
       }
       
       try {
-        // Utiliser le store entities pour récupérer les directeurs de l'entité
-        const response = await store.dispatch('entities/fetchEntityBoardDirectors', {
-          entityId: form.value.entityId,
-          params: { status: 'active' } // Récupérer seulement les directeurs actifs
+        // Utiliser le store entities pour récupérer les conseils d'administration de l'entité
+        const response = await store.dispatch('boardCouncils/fetchBoardCouncils', {
+          params: { 
+            entity_id: form.value.entityId,
+           }
         })
         
-        boardDirectors.value = store.getters['entities/boardDirectors']
+        boardCouncils.value = store.getters['boardCouncils/boardCouncils']
+
+        console.log('Conseils d\'administration chargés:', boardCouncils.value)
         
         // Réinitialiser la sélection du directeur
-        form.value.boardDirectorId = ''
+        form.value.boardCouncilId = ''
       } catch (error) {
-        console.error('Erreur lors du chargement des directeurs:', error)
+        console.error('Erreur lors du chargement des conseils d\'administration:', error)
         notifyError('Erreur lors du chargement des directeurs')
         
-        // Fallback avec des données simulées en cas d'erreur API
-        const directorsData = {
-          '1': [
-            {
-              id: '1',
-              nom_prenom: 'Alain KOUASSI',
-              fonction: 'Président du Conseil d\'Administration'
-            },
-            {
-              id: '2',
-              nom_prenom: 'Marie ADJOVI',
-              fonction: 'Vice-Présidente'
-            }
-          ],
-          '2': [
-            {
-              id: '3',
-              nom_prenom: 'Jean-Baptiste HOUNKPE',
-              fonction: 'Président du Conseil d\'Administration'
-            },
-            {
-              id: '4',
-              nom_prenom: 'Fatima ALASSANE',
-              fonction: 'Secrétaire du Conseil'
-            }
-          ],
-          '3': [
-            {
-              id: '5',
-              nom_prenom: 'Robert DOSSOU',
-              fonction: 'Président du Conseil d\'Administration'
-            }
-          ]
-        }
-        
-        boardDirectors.value = directorsData[form.value.entityId] || []
-        form.value.boardDirectorId = ''
+        form.value.boardCouncilId = ''
       }
     }
     
@@ -479,6 +446,10 @@ export default {
       } else if (form.value.username.length < 3) {
         errors.value.username = 'Le nom d\'utilisateur doit contenir au moins 3 caractères'
       }
+
+      if (!form.value.sexe) {
+        errors.value.sexe = 'Le sexe est obligatoire'
+      }
       
       if (!form.value.password) {
         errors.value.password = 'Le mot de passe est obligatoire'
@@ -498,8 +469,8 @@ export default {
         errors.value.entityId = 'Veuillez sélectionner une entité'
       }
       
-      if (form.value.entityId && !form.value.boardDirectorId) {
-        errors.value.boardDirectorId = 'Veuillez sélectionner un directeur de conseil'
+      if (form.value.entityId && !form.value.boardCouncilId) {
+        errors.value.boardCouncilId = 'Veuillez sélectionner un directeur de conseil'
       }
       
       if (!form.value.justification.trim()) {
@@ -517,37 +488,35 @@ export default {
     
     const handleRegister = async () => {
       if (!validateForm()) {
+        notifyError('Veuillez remplir tous les champs requis correctement.')
         return
       }
-      
+
       loading.value = true
-      
+
       try {
-        const registrationData = {
-          first_name: form.value.firstName,
-          last_name: form.value.lastName,
-          email: form.value.email,
-          phone_number: form.value.phoneNumber,
-          username: form.value.username,
-          password: form.value.password,
-          entity_id: form.value.entityId,
-          board_director_id: form.value.boardDirectorId,
-          justification: form.value.justification
-        }
-        
-        // Utiliser le store pour l'inscription
-        await store.dispatch('auth/register', registrationData)
-        
-        notifySuccess('Votre demande d\'inscription a été envoyée avec succès ! Vous recevrez un email de confirmation une fois votre compte activé par l\'administrateur.')
-        
-        // Rediriger vers la page de connexion
-        setTimeout(() => {
-          router.push('/login')
-        }, 2000)
-        
+        await store.dispatch('auth/registerWithBoardCouncil', {
+          userData: {
+            first_name: form.value.firstName,
+            last_name: form.value.lastName,
+            email: form.value.email,
+            phone_number: form.value.phoneNumber,
+            username: form.value.username,
+            sexe: form.value.sexe,
+            password: form.value.password,
+            justification: form.value.justification,
+            entity_id: form.value.entityId,
+            board_council_id: form.value.boardCouncilId,
+            accept_terms: form.value.acceptTerms,
+
+          },
+          boardCouncilId: form.value.boardCouncilId
+        })
+
+        notifySuccess('Inscription réussie !')
+        router.push('/login')
       } catch (error) {
-        console.error('Erreur lors de l\'inscription:', error)
-        notifyError(error?.detail || 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.')
+        notifyError(error?.detail || 'Une erreur est survenue lors de l\'inscription.')
       } finally {
         loading.value = false
       }
@@ -562,11 +531,11 @@ export default {
       showPassword,
       showConfirmPassword,
       entities,
-      boardDirectors,
+      boardCouncils,
       form,
       errors,
       isFormValid,
-      loadBoardDirectors,
+      loadBoardCouncils,
       handleRegister
     }
   }

@@ -4,10 +4,10 @@
     <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
       <h1 class="h2 text-dark mb-0">Gestion des utilisateurs</h1>
       <div class="d-flex gap-2">
-        <button @click="$router.push('/admin/users/create')" class="btn btn-success">
+        <!-- <button @click="$router.push('/admin/users/create')" class="btn btn-success">
           <i class="fas fa-plus me-1"></i>
           Nouvel utilisateur
-        </button>
+        </button> -->
         <button @click="refreshUsers" class="btn btn-outline-secondary" :disabled="loading">
           <i class="fas fa-sync-alt me-1" :class="{ 'fa-spin': loading }"></i>
           Actualiser
@@ -38,7 +38,7 @@
             <select v-model="roleFilter" class="form-select">
               <option value="">Tous les rôles</option>
               <option value="admin">Administrateur</option>
-              <option value="manager">Gestionnaire</option>
+              <option value="manager">Membre</option>
               <option value="user">Utilisateur</option>
               <option value="viewer">Observateur</option>
             </select>
@@ -154,13 +154,13 @@
                     >
                       <i class="fas fa-eye"></i>
                     </button>
-                    <button 
+                    <!-- <button 
                       @click="editUser(user.id)"
                       class="btn btn-outline-primary"
                       title="Modifier"
                     >
                       <i class="fas fa-edit"></i>
-                    </button>
+                    </button> -->
                     <button 
                       v-if="!user.is_active"
                       @click="activateUser(user)"
@@ -766,7 +766,7 @@ export default {
     const getRoleLabel = (role) => {
       const labels = {
         admin: 'Administrateur',
-        manager: 'Gestionnaire',
+        manager: 'Membre',
         user: 'Utilisateur',
         viewer: 'Observateur'
       }

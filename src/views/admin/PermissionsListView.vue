@@ -285,7 +285,7 @@ export default {
             status: 'active',
             roles: [
               { id: 1, name: 'Administrateur' },
-              { id: 2, name: 'Gestionnaire RH' }
+              { id: 2, name: 'Membre RH' }
             ]
           },
           {
@@ -297,7 +297,7 @@ export default {
             status: 'active',
             roles: [
               { id: 1, name: 'Administrateur' },
-              { id: 2, name: 'Gestionnaire' },
+              { id: 2, name: 'Membre' },
               { id: 3, name: 'Analyste' }
             ]
           },

@@ -401,7 +401,7 @@ export default {
       try {
         roles.value = [
           { id: '1', name: 'Administrateur' },
-          { id: '2', name: 'Gestionnaire' },
+          { id: '2', name: 'Membre' },
           { id: '3', name: 'Utilisateur' },
           { id: '4', name: 'Observateur' }
         ]

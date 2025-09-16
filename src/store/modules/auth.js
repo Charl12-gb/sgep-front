@@ -307,6 +307,44 @@ const actions = {
           reject(error?.response?.data)
         })
     })
+  },
+
+  registerWithBoardCouncil({ commit }, { userData, boardCouncilId }) {
+    return new Promise((resolve, reject) => {
+      commit('SET_LOADING', true)
+      commit('CLEAR_ERROR')
+
+      api.post(`/auth/register_new_member`, { ...userData, boardCouncilId })
+        .then((response) => {
+          commit('SET_USER', response.data)
+          commit('SET_LOADING', false)
+          resolve(response.data)
+        })
+        .catch((error) => {
+          commit('SET_ERROR', error.response?.data?.detail || 'Erreur lors de l\'inscription avec BoardCouncil')
+          commit('SET_LOADING', false)
+          reject(error)
+        })
+    })
+  },
+
+  registerWithBoardDirector({ commit }, { userData, boardDirectorId }) {
+    return new Promise((resolve, reject) => {
+      commit('SET_LOADING', true)
+      commit('CLEAR_ERROR')
+
+      api.post(`/auth/with-board-director`, { ...userData, board_director_id: boardDirectorId })
+        .then((response) => {
+          commit('SET_USER', response.data)
+          commit('SET_LOADING', false)
+          resolve(response.data)
+        })
+        .catch((error) => {
+          commit('SET_ERROR', error.response?.data?.detail || 'Erreur lors de l\'inscription avec BoardDirector')
+          commit('SET_LOADING', false)
+          reject(error)
+        })
+    })
   }
 }
 

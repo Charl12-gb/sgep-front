@@ -200,7 +200,7 @@ export default {
           },
           {
             id: 2,
-            name: 'Gestionnaire',
+            name: 'Membre',
             code: 'MANAGER',
             description: 'Gestion des entités et supervision des activités',
             status: 'active',
