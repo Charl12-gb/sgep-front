@@ -2,7 +2,13 @@
   <div class="container">
     <!-- En-tête de page -->
     <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
-      <h1 class="h2 text-dark mb-0">Gestion des utilisateurs</h1>
+      <div class="d-flex align-items-center gap-3">
+        <router-link to="/dashboard" class="btn btn-outline-secondary btn-sm" title="Retour au tableau de bord">
+          <i class="fas fa-arrow-left me-1"></i>
+          Retour
+        </router-link>
+        <h1 class="h2 text-dark mb-0">Gestion des utilisateurs</h1>
+      </div>
       <div class="d-flex gap-2">
         <!-- <button @click="$router.push('/admin/users/create')" class="btn btn-success">
           <i class="fas fa-plus me-1"></i>

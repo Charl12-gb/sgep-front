@@ -1,6 +1,17 @@
 <template>
   <div class="container py-4" style="background-color: #f8f9fa; min-height: 100vh;">
 
+    <!-- En-tête de page -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex align-items-center gap-3">
+        <router-link to="/dashboard" class="btn btn-outline-secondary btn-sm" title="Retour au tableau de bord">
+          <i class="fas fa-arrow-left me-1"></i>
+          Retour
+        </router-link>
+        <h1 class="h2 text-dark mb-0">Génération de Rapports</h1>
+      </div>
+    </div>
+
     <!-- Configuration du rapport -->
     <div class="row mb-4">
       <div class="col-12">

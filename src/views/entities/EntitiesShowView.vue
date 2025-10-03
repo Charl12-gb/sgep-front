@@ -38,7 +38,8 @@
                             <div class="border-start border-primary border-4 ps-3">
                               <h6 class="text-muted text-uppercase small mb-1">Sigle</h6>
                               <p class="mb-0 fw-semibold">{{ entity.sigle || 'Non renseigné' }}
-                                <router-link :to="`/entities/${entity.id}/edit`" class="btn btn-light btn-sm" title="Modifier l'entité">
+                                <router-link :to="`/entities/${entity.id}/edit`" class="btn btn-light btn-sm"
+                                  title="Modifier l'entité">
                                   <i class="fas fa-edit"></i>
                                 </router-link>
                               </p>
@@ -125,18 +126,26 @@
                     <div class="card border-0 shadow-sm">
                       <div class="card-header bg-white">
                         <div class="d-flex justify-content-between align-items-center">
-                          <h5 class="mb-0">
+                          <h5 class="mb-0" v-if="showEffectifsHistory">
                             <i class="fas fa-users me-2"></i>
                             Effectifs par année
                           </h5>
-                          <button class="btn btn-success btn-sm" @click="openEffectifModal()">
-                            <i class="fas fa-plus me-1"></i>
-                            Ajouter un effectif
-                          </button>
+                          <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm"
+                              @click="showEffectifsHistory = !showEffectifsHistory"
+                              :title="showEffectifsHistory ? 'Masquer l\'historique' : 'Afficher l\'historique'">
+                              <i :class="showEffectifsHistory ? 'fas fa-eye-slash' : 'fas fa-eye'" class="me-1"></i>
+                              {{ showEffectifsHistory ? 'Masquer' : 'Historique' }}
+                            </button>
+                            <button class="btn btn-success btn-sm" @click="openEffectifModal()">
+                              <i class="fas fa-plus me-1"></i>
+                              Ajouter un effectif
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <div class="card-body">
-                        <div class="table-responsive" v-if="entity.effectifs && entity.effectifs.length > 0">
+                        <div v-if="showEffectifsHistory &&entity.effectifs && entity.effectifs.length > 0" class="table-responsive">
                           <table class="table table-hover">
                             <thead class="table-light">
                               <tr>
@@ -157,29 +166,34 @@
                                 <td>
                                   <span class="badge bg-success">{{ effectif.nombre_femme }}</span>
                                 </td>
-                                <td class="fw-bold">{{ effectif.nombre_total || (effectif.nombre_homme + effectif.nombre_femme) }}</td>
+                                <td class="fw-bold">{{ effectif.nombre_total || (effectif.nombre_homme +
+                                  effectif.nombre_femme) }}</td>
                                 <td>
                                   <div class="d-flex align-items-center">
                                     <div class="progress flex-grow-1 me-2" style="height: 20px;">
-                                      <div class="progress-bar bg-primary" role="progressbar" 
-                                           :style="`width: ${getPercentage(effectif.nombre_homme, effectif.nombre_total || (effectif.nombre_homme + effectif.nombre_femme))}%`">
+                                      <div class="progress-bar bg-primary" role="progressbar"
+                                        :style="`width: ${getPercentage(effectif.nombre_homme, effectif.nombre_total || (effectif.nombre_homme + effectif.nombre_femme))}%`">
                                       </div>
-                                      <div class="progress-bar bg-success" role="progressbar" 
-                                           :style="`width: ${getPercentage(effectif.nombre_femme, effectif.nombre_total || (effectif.nombre_homme + effectif.nombre_femme))}%`">
+                                      <div class="progress-bar bg-success" role="progressbar"
+                                        :style="`width: ${getPercentage(effectif.nombre_femme, effectif.nombre_total || (effectif.nombre_homme + effectif.nombre_femme))}%`">
                                       </div>
                                     </div>
                                     <small class="text-muted">
-                                      {{ Math.round(getPercentage(effectif.nombre_homme, effectif.nombre_total || (effectif.nombre_homme + effectif.nombre_femme))) }}% / 
-                                      {{ Math.round(getPercentage(effectif.nombre_femme, effectif.nombre_total || (effectif.nombre_homme + effectif.nombre_femme))) }}%
+                                      {{ Math.round(getPercentage(effectif.nombre_homme, effectif.nombre_total ||
+                                        (effectif.nombre_homme + effectif.nombre_femme))) }}% /
+                                      {{ Math.round(getPercentage(effectif.nombre_femme, effectif.nombre_total ||
+                                        (effectif.nombre_homme + effectif.nombre_femme))) }}%
                                     </small>
                                   </div>
                                 </td>
                                 <td class="text-center">
                                   <div class="btn-group" role="group">
-                                    <button class="btn btn-outline-primary btn-sm" title="Modifier" @click="editEffectif(effectif)">
+                                    <button class="btn btn-outline-primary btn-sm" title="Modifier"
+                                      @click="editEffectif(effectif)">
                                       <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-outline-danger btn-sm" title="Supprimer" @click="confirmDeleteEffectif(effectif)">
+                                    <button class="btn btn-outline-danger btn-sm" title="Supprimer"
+                                      @click="confirmDeleteEffectif(effectif)">
                                       <i class="fas fa-trash"></i>
                                     </button>
                                   </div>
@@ -188,7 +202,7 @@
                             </tbody>
                           </table>
                         </div>
-                        <div v-else class="text-center py-4">
+                        <div v-else-if="showEffectifsHistory" class="text-center py-4">
                           <div class="mb-3">
                             <i class="fas fa-users fa-3x text-muted"></i>
                           </div>
@@ -217,23 +231,31 @@
                           <div class="row g-3">
                             <div class="col-md-6">
                               <label class="form-label fw-semibold">Année <span class="text-danger">*</span></label>
-                              <input type="number" v-model="effectifForm.annee" class="form-control" required min="1900" max="2100">
+                              <input type="number" v-model="effectifForm.annee" class="form-control" required min="1900"
+                                max="2100">
                             </div>
                             <div class="col-md-6">
-                              <label class="form-label fw-semibold">Nombre total <span class="text-danger">*</span></label>
-                              <input type="number" :value="effectifForm.nombre_homme + effectifForm.nombre_femme" class="form-control" readonly>
+                              <label class="form-label fw-semibold">Nombre total <span
+                                  class="text-danger">*</span></label>
+                              <input type="number" :value="effectifForm.nombre_homme + effectifForm.nombre_femme"
+                                class="form-control" readonly>
                             </div>
                             <div class="col-md-6">
-                              <label class="form-label fw-semibold">Nombre d'hommes <span class="text-danger">*</span></label>
-                              <input type="number" v-model="effectifForm.nombre_homme" class="form-control" required min="0">
+                              <label class="form-label fw-semibold">Nombre d'hommes <span
+                                  class="text-danger">*</span></label>
+                              <input type="number" v-model="effectifForm.nombre_homme" class="form-control" required
+                                min="0">
                             </div>
                             <div class="col-md-6">
-                              <label class="form-label fw-semibold">Nombre de femmes <span class="text-danger">*</span></label>
-                              <input type="number" v-model="effectifForm.nombre_femme" class="form-control" required min="0">
+                              <label class="form-label fw-semibold">Nombre de femmes <span
+                                  class="text-danger">*</span></label>
+                              <input type="number" v-model="effectifForm.nombre_femme" class="form-control" required
+                                min="0">
                             </div>
                           </div>
                           <div class="d-flex justify-content-end gap-2 mt-4">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="button" class="btn btn-outline-secondary"
+                              data-bs-dismiss="modal">Annuler</button>
                             <button type="submit" class="btn btn-success" :disabled="loadingEffectif">
                               <i v-if="loadingEffectif" class="fas fa-spinner fa-spin me-2"></i>
                               {{ isEditingEffectif ? 'Mettre à jour' : 'Ajouter' }}
@@ -257,12 +279,14 @@
                         <p>Êtes-vous sûr de vouloir supprimer cet effectif ?</p>
                         <p class="text-danger fw-semibold mb-0" v-if="effectifToDelete">
                           Année : {{ effectifToDelete.annee }}<br>
-                          Total : {{ effectifToDelete.nombre_total || (effectifToDelete.nombre_homme + effectifToDelete.nombre_femme) }}
+                          Total : {{ effectifToDelete.nombre_total || (effectifToDelete.nombre_homme +
+                          effectifToDelete.nombre_femme) }}
                         </p>
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="button" class="btn btn-danger" @click="deleteEffectif" :disabled="loadingEffectif">
+                        <button type="button" class="btn btn-danger" @click="deleteEffectif"
+                          :disabled="loadingEffectif">
                           <i v-if="loadingEffectif" class="fas fa-spinner fa-spin me-2"></i>
                           Supprimer
                         </button>
@@ -338,6 +362,7 @@ export default {
     // Variables pour la gestion des effectifs
     const loadingEffectif = ref(false)
     const isEditingEffectif = ref(false)
+    const showEffectifsHistory = ref(false)
     const effectifForm = ref({
       id: null,
       annee: '',
@@ -392,7 +417,7 @@ export default {
 
     // S'assurer que directionGenerale a toujours une valeur
     const directionGeneraleComputed = computed(() => directionGenerale.value || [])
-    
+
     // Computed pour les effectifs triés
     const sortedEffectifs = computed(() => {
       if (!entity.value || !entity.value.effectifs) return []
@@ -556,7 +581,7 @@ export default {
 
       // Priorité : conseil avec is_current_director = true, sinon le plus récent
       const activeCouncil = councils.find(c => c.is_current_director) || councils[0]
-      
+
       router.push({
         name: 'EntityMandateShow',
         params: {
@@ -664,7 +689,7 @@ export default {
         resetEffectifForm()
         isEditingEffectif.value = false
       }
-      
+
       // Attendre le prochain tick avant d'ouvrir le modal
       setTimeout(() => {
         const modalElement = document.getElementById('effectifModal')
@@ -681,18 +706,18 @@ export default {
 
     const saveEffectif = async () => {
       if (loadingEffectif.value) return // Éviter les doubles soumissions
-      
+
       // Validation basique
       if (!effectifForm.value.annee || effectifForm.value.annee < 1900 || effectifForm.value.annee > 2100) {
         notifyError('Veuillez saisir une année valide')
         return
       }
-      
+
       if (Number(effectifForm.value.nombre_homme) < 0 || Number(effectifForm.value.nombre_femme) < 0) {
         notifyError('Les nombres ne peuvent pas être négatifs')
         return
       }
-      
+
       loadingEffectif.value = true
       try {
         const payload = {
@@ -704,9 +729,9 @@ export default {
         }
 
         if (isEditingEffectif.value && effectifForm.value.id) {
-          await store.dispatch('effectifs/updateEffectif', { 
-            id: effectifForm.value.id, 
-            payload 
+          await store.dispatch('effectifs/updateEffectif', {
+            id: effectifForm.value.id,
+            payload
           })
           notifySuccess('Effectif mis à jour avec succès')
         } else {
@@ -723,7 +748,7 @@ export default {
 
         // Recharger les données
         await loadEntity()
-        
+
       } catch (error) {
         console.error('Erreur lors de la sauvegarde de l\'effectif:', error)
         notifyError(error?.detail || 'Erreur lors de l\'enregistrement de l\'effectif')
@@ -737,12 +762,12 @@ export default {
     const cleanupModals = () => {
       const effectifModalEl = document.getElementById('effectifModal')
       const deleteModalEl = document.getElementById('deleteEffectifModal')
-      
+
       if (effectifModalEl) {
         const modal = Modal.getInstance(effectifModalEl)
         if (modal) modal.dispose()
       }
-      
+
       if (deleteModalEl) {
         const modal = Modal.getInstance(deleteModalEl)
         if (modal) modal.dispose()
@@ -751,7 +776,7 @@ export default {
 
     const confirmDeleteEffectif = (effectif) => {
       effectifToDelete.value = effectif
-      
+
       // Attendre le prochain tick avant d'ouvrir le modal
       setTimeout(() => {
         const modalElement = document.getElementById('deleteEffectifModal')
@@ -764,11 +789,11 @@ export default {
 
     const deleteEffectif = async () => {
       if (!effectifToDelete.value) return
-      
+
       loadingEffectif.value = true
       try {
         await store.dispatch('effectifs/deleteEffectif', effectifToDelete.value.id)
-        
+
         // Fermer le modal
         const modalElement = document.getElementById('deleteEffectifModal')
         if (modalElement) {
@@ -778,7 +803,7 @@ export default {
 
         // Recharger les données
         await loadEntity()
-        
+
         notifySuccess('Effectif supprimé avec succès')
       } catch (error) {
         console.error('Erreur lors de la suppression de l\'effectif:', error)
@@ -811,6 +836,7 @@ export default {
       // Variables pour les effectifs
       loadingEffectif,
       isEditingEffectif,
+      showEffectifsHistory,
       effectifForm,
       effectifToDelete,
       // Méthodes pour les effectifs

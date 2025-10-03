@@ -17,14 +17,15 @@
           <!-- Navigation principale -->
           <nav class="main-nav d-none d-lg-block">
             <ul class="nav-list d-flex list-unstyled mb-0">
-              <li class="nav-item dropdown" @mouseenter="showDropdown('admin')" @mouseleave="hideDropdown('admin')" v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')">
-                <a href="#" class="nav-link text-white px-3 py-2 dropdown-toggle" :class="{ active: isActiveMenu('admin') }">
-                  ADMINISTRATION
-                </a>
-                <ul v-show="dropdowns.admin" class="dropdown-menu show">
-                  <li><router-link to="/reports-extended" class="dropdown-item">Rapports</router-link></li>
-                  <li><router-link to="/users" class="dropdown-item">Utilisateurs</router-link></li>
-                </ul>
+              <li class="nav-item" v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')">
+                <router-link to="/reports-extended" class="nav-link text-white px-3 py-2" :class="{ active: $route.path === '/reports-extended' }">
+                  RAPPORTS
+                </router-link>
+              </li>
+              <li class="nav-item" v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')">
+                <router-link to="/users" class="nav-link text-white px-3 py-2" :class="{ active: $route.path === '/users' }">
+                  UTILISATEURS
+                </router-link>
               </li>
             </ul>
           </nav>
@@ -115,20 +116,17 @@
                 <li><router-link to="/entities/create" class="mobile-submenu-link" @click="closeMobileMenu">Nouvelle entité</router-link></li>
               </ul>
             </li>
-            <li class="mb-2">
+            <li class="mb-2" v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')">
               <router-link to="/reports-extended" class="mobile-nav-link" @click="closeMobileMenu">
                 <i class="fas fa-chart-bar me-2"></i>
                 Rapports
               </router-link>
             </li>
-            <li class="mb-2">
-              <a @click="toggleMobileSubmenu('admin')" class="mobile-nav-link d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-cog me-2"></i>Administration</span>
-                <i class="fas fa-chevron-down" :class="{ 'rotate-180': mobileSubmenus.admin }"></i>
-              </a>
-              <ul v-if="mobileSubmenus.admin" class="list-unstyled ms-4 mt-2">
-                <li><router-link to="/users" class="mobile-submenu-link" @click="closeMobileMenu">Utilisateurs</router-link></li>
-              </ul>
+            <li class="mb-2" v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')">
+              <router-link to="/users" class="mobile-nav-link" @click="closeMobileMenu">
+                <i class="fas fa-users me-2"></i>
+                Utilisateurs
+              </router-link>
             </li>
           </ul>
         </nav>
@@ -158,39 +156,15 @@ export default {
     const selectedEntityId = ref('')
     const isInitializing = ref(true)
     
-    const dropdowns = ref({
-      entities: false,
-      sessions: false,
-      trainings: false,
-      analytics: false,
-      admin: false
-    })
-    
     const mobileSubmenus = ref({
-      entities: false,
-      sessions: false,
-      trainings: false,
-      analytics: false,
-      admin: false
+      entities: false
     })
     
     const user = computed(() => store.getters['auth/user'])
     const availableEntities = computed(() => store.getters['entities/entities'])
     const selectedEntity = computed(() => store.getters['entities/selectedEntity'])
 
-    const showDropdown = (menu) => {
-      dropdowns.value[menu] = true
-    }
-    
-    const hideDropdown = (menu) => {
-      setTimeout(() => {
-        dropdowns.value[menu] = false
-      }, 200)
-    }
-    
-    const isActiveMenu = (path) => {
-      return route.path.includes(path)
-    }
+
     
     const toggleMobileMenu = () => {
       showMobileMenu.value = !showMobileMenu.value
@@ -265,12 +239,8 @@ export default {
       showUserMenu,
       showMobileMenu,
       userDropdown,
-      dropdowns,
       mobileSubmenus,
       user,
-      showDropdown,
-      hideDropdown,
-      isActiveMenu,
       toggleMobileMenu,
       closeMobileMenu,
       toggleMobileSubmenu,

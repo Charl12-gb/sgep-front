@@ -61,7 +61,7 @@ const actions = {
       commit('SET_LOADING', true)
       commit('CLEAR_ERROR')
       
-      api.get(`/users?page=${page}&limit=${limit}&search=${search}`)
+      api.get(`/users/?page=${page}&limit=${limit}&search=${search}`)
         .then((response) => {          
           // L'API peut retourner différentes structures selon le backend
           let users = []
@@ -140,7 +140,7 @@ const actions = {
   searchUsers({ commit }, { search = '' } = {}) {
     return new Promise((resolve, reject) => {
       // Ne pas commit les mutations pour ne pas affecter l'état global
-      api.get(`/users?page=1&limit=20&search=${search}`)
+      api.get(`/users/?page=1&limit=20&search=${search}`)
         .then((response) => {
           const { users } = response.data
           resolve(users || [])
