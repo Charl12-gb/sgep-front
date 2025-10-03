@@ -230,8 +230,8 @@ const actions = {
     }
   },
   
-  // Actions pour les réponses d'entités
-  async fetchEntityOutilsReponses({ commit }, { entityId, annee, category = null }) {
+  // Actions pour les réponses des conseils d'administration
+  async fetchBoardCouncilOutilsReponses({ commit }, { boardCouncilId, annee, category = null }) {
     commit('SET_LOADING', true)
     commit('CLEAR_ERROR')
     
@@ -239,9 +239,9 @@ const actions = {
       const params = { annee }
       if (category) params.category = category
       
-      const response = await api.get(`/entreprise/entities/${entityId}/outils-reponses`, { params })
+      const response = await api.get(`/entreprise/board-councils/${boardCouncilId}/outils-reponses`, { params })
       commit('SET_ENTITY_OUTILS_REPONSES', { 
-        entityId, 
+        entityId: boardCouncilId, 
         reponses: response.data.reponses 
       })
       return response.data
@@ -252,13 +252,20 @@ const actions = {
       commit('SET_LOADING', false)
     }
   },
+
+  // Legacy method for backward compatibility
+  async fetchEntityOutilsReponses({ dispatch }, { entityId, annee, category = null }) {
+    // For backward compatibility, redirect to the new method
+    console.warn('fetchEntityOutilsReponses is deprecated, use fetchBoardCouncilOutilsReponses instead')
+    return dispatch('fetchBoardCouncilOutilsReponses', { boardCouncilId: entityId, annee, category })
+  },
   
-  async saveEntityReponse({ commit }, { entityId, reponseData }) {
+  async saveBoardCouncilReponse({ commit }, { boardCouncilId, reponseData }) {
     commit('SET_SAVING_REPONSES', true)
     commit('CLEAR_ERROR')
     
     try {
-      const response = await api.post(`/entreprise/entities/${entityId}/outils-reponses`, reponseData)
+      const response = await api.post(`/entreprise/board-councils/${boardCouncilId}/outils-reponses`, reponseData)
       commit('UPDATE_ENTITY_REPONSE', { 
         outilId: reponseData.outil_id, 
         reponse: response.data 
@@ -271,17 +278,23 @@ const actions = {
       commit('SET_SAVING_REPONSES', false)
     }
   },
+
+  // Legacy method
+  async saveEntityReponse({ dispatch }, { entityId, reponseData }) {
+    console.warn('saveEntityReponse is deprecated, use saveBoardCouncilReponse instead')
+    return dispatch('saveBoardCouncilReponse', { boardCouncilId: entityId, reponseData })
+  },
   
-  async saveEntityReponsesBulk({ commit }, { entityId, bulkData }) {
+  async saveBoardCouncilReponsesBulk({ commit }, { boardCouncilId, bulkData }) {
     commit('SET_SAVING_REPONSES', true)
     commit('CLEAR_ERROR')
     
     try {
-      const response = await api.post(`/entreprise/entities/${entityId}/outils-reponses/bulk`, bulkData)
+      const response = await api.post(`/entreprise/board-councils/${boardCouncilId}/outils-reponses/bulk`, bulkData)
       
       // Recharger les réponses après la sauvegarde en lot
-      await actions.fetchEntityOutilsReponses({ commit }, { 
-        entityId, 
+      await actions.fetchBoardCouncilOutilsReponses({ commit }, { 
+        boardCouncilId, 
         annee: bulkData.annee 
       })
       
@@ -293,13 +306,19 @@ const actions = {
       commit('SET_SAVING_REPONSES', false)
     }
   },
+
+  // Legacy method
+  async saveEntityReponsesBulk({ dispatch }, { entityId, bulkData }) {
+    console.warn('saveEntityReponsesBulk is deprecated, use saveBoardCouncilReponsesBulk instead')
+    return dispatch('saveBoardCouncilReponsesBulk', { boardCouncilId: entityId, bulkData })
+  },
   
-  async updateEntityReponse({ commit }, { entityId, reponseId, reponseData }) {
+  async updateBoardCouncilReponse({ commit }, { boardCouncilId, reponseId, reponseData }) {
     commit('SET_SAVING_REPONSES', true)
     commit('CLEAR_ERROR')
     
     try {
-      const response = await api.put(`/entreprise/entities/${entityId}/outils-reponses/${reponseId}`, reponseData)
+      const response = await api.put(`/entreprise/board-councils/${boardCouncilId}/outils-reponses/${reponseId}`, reponseData)
       commit('UPDATE_ENTITY_REPONSE', { 
         outilId: response.data.outil_id, 
         reponse: response.data 
@@ -312,13 +331,19 @@ const actions = {
       commit('SET_SAVING_REPONSES', false)
     }
   },
+
+  // Legacy method
+  async updateEntityReponse({ dispatch }, { entityId, reponseId, reponseData }) {
+    console.warn('updateEntityReponse is deprecated, use updateBoardCouncilReponse instead')
+    return dispatch('updateBoardCouncilReponse', { boardCouncilId: entityId, reponseId, reponseData })
+  },
   
-  async deleteEntityReponse({ commit }, { entityId, reponseId, outilId }) {
+  async deleteBoardCouncilReponse({ commit }, { boardCouncilId, reponseId, outilId }) {
     commit('SET_SAVING_REPONSES', true)
     commit('CLEAR_ERROR')
     
     try {
-      await api.delete(`/entreprise/entities/${entityId}/outils-reponses/${reponseId}`)
+      await api.delete(`/entreprise/board-councils/${boardCouncilId}/outils-reponses/${reponseId}`)
       // Supprimer de l'état local
       if (state.currentEntityReponses.reponses) {
         delete state.currentEntityReponses.reponses[outilId]
@@ -330,14 +355,20 @@ const actions = {
       commit('SET_SAVING_REPONSES', false)
     }
   },
+
+  // Legacy method
+  async deleteEntityReponse({ dispatch }, { entityId, reponseId, outilId }) {
+    console.warn('deleteEntityReponse is deprecated, use deleteBoardCouncilReponse instead')
+    return dispatch('deleteBoardCouncilReponse', { boardCouncilId: entityId, reponseId, outilId })
+  },
   
   // Actions pour l'initialisation
-  async initEntityOutils({ commit }, { entityId, annee }) {
+  async initBoardCouncilOutils({ commit }, { boardCouncilId, annee }) {
     commit('SET_LOADING', true)
     commit('CLEAR_ERROR')
     
     try {
-      const response = await api.post(`/entreprise/entities/${entityId}/init-outils`, null, {
+      const response = await api.post(`/entreprise/board-councils/${boardCouncilId}/init-outils`, null, {
         params: { annee }
       })
       return response.data
@@ -347,6 +378,12 @@ const actions = {
     } finally {
       commit('SET_LOADING', false)
     }
+  },
+
+  // Legacy method
+  async initEntityOutils({ dispatch }, { entityId, annee }) {
+    console.warn('initEntityOutils is deprecated, use initBoardCouncilOutils instead')
+    return dispatch('initBoardCouncilOutils', { boardCouncilId: entityId, annee })
   },
   
   // Actions pour les statistiques

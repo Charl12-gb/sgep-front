@@ -11,12 +11,12 @@ module.exports = {
     parser: '@babel/eslint-parser'
   },
   rules: {
-    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    "no-unused-vars": "off",
-    "no-empty": "off",
-    "vue/no-use-v-if-with-v-for": "off",
+    'no-console': 'warn',
+    'no-debugger': 'warn',
+    "no-unused-vars": "warn",
+    "no-empty": "warn",
+    "vue/no-use-v-if-with-v-for": "warn",
     "vue/multi-word-component-names": "off",
-    "vue/no-ref-as-operand": "off",
+    "vue/no-ref-as-operand": "warn",
   },
 }

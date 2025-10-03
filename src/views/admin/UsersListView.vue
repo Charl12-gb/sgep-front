@@ -523,17 +523,12 @@ export default {
     const users = ref([])
     const currentUser = computed(() => store.getters['auth/user'])
     
-    const filteredUsers = computed(() => {
-      console.log('Computing filteredUsers, users.value:', users.value)
-      
+    const filteredUsers = computed(() => {      
       if (!users.value || !Array.isArray(users.value)) {
-        console.log('users.value is not an array:', users.value)
         return []
       }
       
-      let filtered = users.value
-      console.log('Starting with users:', filtered.length)
-      
+      let filtered = users.value      
       // Filtre par recherche
       if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase()
@@ -541,30 +536,24 @@ export default {
           `${user.first_name} ${user.last_name}`.toLowerCase().includes(query) ||
           user.email.toLowerCase().includes(query)
         )
-        console.log('After search filter:', filtered.length)
       }
       
       // Filtre par rôle
       if (roleFilter.value) {
         filtered = filtered.filter(user => user.role === roleFilter.value)
-        console.log('After role filter:', filtered.length)
       }
-      
+
       // Filtre par statut
       if (statusFilter.value) {
         filtered = filtered.filter(user => user.status === statusFilter.value)
-        console.log('After status filter:', filtered.length)
+
       }
-      
-      console.log('Final filtered users:', filtered)
       return filtered
     })
     
     const loadUsers = async (page = null) => {
       loading.value = true
-      try {
-        console.log('Loading users...')
-        
+      try {        
         const targetPage = page || currentPage.value
         
         // Utiliser fetchUsers avec pagination
@@ -577,9 +566,6 @@ export default {
         // Récupérer les utilisateurs depuis le store
         const storeUsers = store.getters['users/users']
         const pagination = store.getters['users/pagination']
-        
-        console.log('Users from store:', storeUsers)
-        console.log('Pagination from store:', pagination)
         
         // Mettre à jour la pagination
         if (!page) {
@@ -611,13 +597,10 @@ export default {
             last_board_director: user.last_board_director || null
           }))
           
-          console.log('Mapped users:', users.value)
         } else {
           users.value = []
-          console.log('No users found in store')
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des utilisateurs:', error)
         notifyError('Erreur lors du chargement des utilisateurs')
         users.value = []
       } finally {
@@ -663,19 +646,12 @@ export default {
         await store.dispatch('users/activateUser', userToActivate.value.id)
         
         notifySuccess(`Utilisateur ${userToActivate.value.first_name} ${userToActivate.value.last_name} activé avec succès`)
-        
-        // Envoyer email si demandé (simulation côté frontend)
-        if (sendActivationEmail.value) {
-          console.log('Email d\'activation envoyé à:', userToActivate.value.email)
-        }
-        
         showActivateModal.value = false
         userToActivate.value = null
         
         // Recharger la page courante
         await loadUsers()
       } catch (error) {
-        console.error('Erreur lors de l\'activation:', error)
         notifyError(error?.detail || 'Erreur lors de l\'activation de l\'utilisateur')
       } finally {
         loadingActivate.value = false
@@ -688,23 +664,15 @@ export default {
       loadingDeactivate.value = true
       
       try {
-        // Utiliser le store users pour désactiver l'utilisateur
         await store.dispatch('users/deactivateUser', userToDeactivate.value.id)
         
         notifySuccess(`Utilisateur ${userToDeactivate.value.first_name} ${userToDeactivate.value.last_name} désactivé avec succès`)
         
-        // Envoyer email si demandé (simulation côté frontend)
-        if (sendDeactivationEmail.value) {
-          console.log('Email de désactivation envoyé à:', userToDeactivate.value.email)
-        }
-        
         showDeactivateModal.value = false
         userToDeactivate.value = null
         
-        // Recharger la page courante
         await loadUsers()
       } catch (error) {
-        console.error('Erreur lors de la désactivation:', error)
         notifyError(error?.detail || 'Erreur lors de la désactivation de l\'utilisateur')
       } finally {
         loadingDeactivate.value = false
@@ -717,7 +685,6 @@ export default {
       loadingDelete.value = true
       
       try {
-        // Utiliser le store users pour supprimer l'utilisateur
         await store.dispatch('users/deleteUser', userToDelete.value.id)
         
         notifySuccess(`Utilisateur ${userToDelete.value.first_name} ${userToDelete.value.last_name} supprimé avec succès`)
@@ -725,14 +692,12 @@ export default {
         showDeleteModal.value = false
         userToDelete.value = null
         
-        // Recharger la page courante (ou revenir à la page précédente si c'était le dernier élément)
         const shouldGoToPreviousPage = users.value && users.value.length === 1 && currentPage.value > 1
         if (shouldGoToPreviousPage) {
           currentPage.value = currentPage.value - 1
         }
         await loadUsers()
       } catch (error) {
-        console.error('Erreur lors de la suppression:', error)
         notifyError(error?.detail || 'Erreur lors de la suppression de l\'utilisateur')
       } finally {
         loadingDelete.value = false

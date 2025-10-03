@@ -30,5 +30,17 @@ export default createStore({
     boardCouncils,
     reports,
     outils
+  },
+  
+  actions: {
+    // Action pour initialiser l'application
+    async initializeApp({ dispatch }) {
+      try {
+        // Initialiser les entités au démarrage de l'application
+        await dispatch('entities/initializeEntities')
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation de l\'application:', error)
+      }
+    }
   }
 })

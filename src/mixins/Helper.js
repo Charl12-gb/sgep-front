@@ -33,7 +33,7 @@ export default {
     },
     
     // Currency formatting
-    formatCurrency(amount, currency = 'EUR') {
+    formatCurrency(amount, currency = 'XOF') {
       if (amount === null || amount === undefined) return ''
       
       return new Intl.NumberFormat('fr-FR', {

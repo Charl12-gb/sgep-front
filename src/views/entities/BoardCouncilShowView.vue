@@ -1,13 +1,39 @@
 <template>
   <div class="container-lg py-3">
     <nav class="d-flex align-items-center mb-4"> 
-      <router-link :to="`/entities/${entityId}/mandates`" class="me-3 text-muted">
-        <i class="bi bi-arrow-left"></i>
-      </router-link>
-      <div class="flex-grow-1">
-        <h2 class="mb-0">Conseil d'administration</h2>
-        <small class="text-muted">{{ council.reference_decret || 'Référence non définie' }}</small>
+      <div class="d-flex align-items-center gap-2">
+        <router-link :to="`/dashboard`" class="btn btn-outline-secondary btn-sm" title="Retour à l'entité">
+          <i class="fas fa-arrow-left me-1"></i>
+          Retour à l'entité
+        </router-link>
+        
+        <!-- Sélecteur de conseil juste à côté du bouton retour -->
+        <div v-if="availableCouncils.length > 1">
+          <select 
+            v-model="selectedCouncilId" 
+            @change="switchCouncil"
+            class="form-select form-select-sm"
+            style="width: auto; min-width: 200px;">
+            <option 
+              v-for="availableCouncil in availableCouncils" 
+              :key="availableCouncil.id" 
+              :value="availableCouncil.id">
+              {{ availableCouncil.reference_decret || `Conseil ${availableCouncil.id}` }}
+              {{ availableCouncil.is_current_director ? '(Actuel)' : '' }}
+            </option>
+          </select>
+        </div>
       </div>
+      
+      <div class="flex-grow-1">
+        <div class="d-flex align-items-center justify-content-center">
+          <div class="text-center">
+            <h2 class="mb-0">Conseil d'administration</h2>
+            <small class="text-muted">{{ council.reference_decret || 'Référence non définie' }}</small>
+          </div>
+        </div>
+      </div>
+      
       <div class="d-flex gap-2">
         <button class="btn btn-sm btn-success" @click="openCreateModal" title="Ajouter un membre">
           <i class="fas fa-user-plus"></i>
@@ -31,6 +57,21 @@
         <li class="nav-item" role="presentation">
           <button class="nav-link" :class="{active: activeTab === 'sessions'}" id="sessions-tab" data-bs-toggle="tab" type="button" role="tab" @click="activeTab = 'sessions'">
             Sessions du conseil
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" :class="{active: activeTab === 'tools'}" id="tools-tab" data-bs-toggle="tab" type="button" role="tab" @click="activeTab = 'tools'">
+            Outils de fonctionnement
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" :class="{active: activeTab === 'formation'}" id="formation-tab" data-bs-toggle="tab" type="button" role="tab" @click="activeTab = 'formation'">
+            Formation des administrateurs
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" :class="{active: activeTab === 'pilotage'}" id="pilotage-tab" data-bs-toggle="tab" type="button" role="tab" @click="activeTab = 'pilotage'">
+            Pilotage stratégique
           </button>
         </li>
       </ul>
@@ -191,6 +232,27 @@
             @sessions-updated="onSessionsUpdated"
           />
         </div>
+        
+        <div class="tab-pane fade" :class="{show: activeTab === 'tools', active: activeTab === 'tools'}" id="tools" role="tabpanel">
+          <EntityTools 
+            :board-council-id="$route.params.councilId"
+            :reload-data="load"
+          />
+        </div>
+        
+        <div class="tab-pane fade" :class="{show: activeTab === 'formation', active: activeTab === 'formation'}" id="formation" role="tabpanel">
+          <EntityFormation 
+            :board-council-id="$route.params.councilId"
+            :reload-data="load"
+          />
+        </div>
+        
+        <div class="tab-pane fade" :class="{show: activeTab === 'pilotage', active: activeTab === 'pilotage'}" id="pilotage" role="tabpanel">
+          <EntityPilotage 
+            :board-council-id="$route.params.councilId"
+            :reload-data="load"
+          />
+        </div>
       </div>
     </div>
 
@@ -341,26 +403,38 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import SessionsList from '@/components/sessions/SessionsList.vue'
 import BoardDirectorReplacement from '@/components/board-directors/BoardDirectorReplacement.vue'
+import EntityTools from '@/components/entity/EntityTools.vue'
+import EntityFormation from '@/components/entity/EntityFormation.vue'
+import EntityPilotage from '@/components/entity/EntityPilotage.vue'
 
 export default {
   name: 'BoardCouncilShowView',
   components: {
     SessionsList,
-    BoardDirectorReplacement
+    BoardDirectorReplacement,
+    EntityTools,
+    EntityFormation,
+    EntityPilotage
   },
   props: ['entityId'],
   setup(props) {
     const store = useStore()
     const route = useRoute()
-  const loading = ref(false)
-  // Onglets
-  const activeTab = ref('council')
+    const router = useRouter()
+    
+    const loading = ref(false)
+    // Onglets
+    const activeTab = ref('council')
+    
+    // Variables pour les conseils disponibles
+    const availableCouncils = ref([])
+    const selectedCouncilId = ref(route.params.councilId)
     const council = ref({})
     const members = ref([])
     const yearFrom = ref(null)
@@ -738,54 +812,77 @@ export default {
 
     // Méthodes pour le remplacement
     const openReplacementModal = (member) => {
-      console.log('🔄 openReplacementModal appelé avec:', member)
       selectedDirectorForReplacement.value = member
       showReplacementModal.value = true
-      console.log('✅ showReplacementModal.value =', showReplacementModal.value)
-      console.log('✅ selectedDirectorForReplacement.value =', selectedDirectorForReplacement.value)
     }
 
     const closeReplacementModal = () => {
-      console.log('❌ closeReplacementModal appelé')
       showReplacementModal.value = false
       selectedDirectorForReplacement.value = null
     }
 
     const onDirectorReplaced = async () => {
-      console.log('✅ onDirectorReplaced appelé')
-      // Recharger la liste des membres après un remplacement
       await load()
       closeReplacementModal()
     }
 
     const openHistoryModal = async (member) => {
-      console.log('📜 openHistoryModal appelé avec:', member)
       try {
-        // Récupérer l'historique des remplacements pour ce membre
-        const history = await store.dispatch('boardDirectors/fetchBoardDirectorReplacements', member.id)
-        console.log('📊 Historique récupéré:', history)
-        
-        // Ouvrir le modal avec l'historique
+        const history = await store.dispatch('boardDirectors/fetchBoardDirectorReplacements', member.id)        
         selectedDirectorForReplacement.value = { ...member, replacementHistory: history }
         showReplacementModal.value = true
-        console.log('✅ Modal d\'historique ouvert')
       } catch (error) {
-        console.error('❌ Erreur lors de la récupération de l\'historique:', error)
         alert('Impossible de récupérer l\'historique des remplacements')
       }
     }
 
     // Méthodes
+    const loadAvailableCouncils = async () => {
+      try {
+        await store.dispatch('boardCouncils/fetchBoardCouncils', {
+          params: {
+            entity_id: props.entityId || route.params.id
+          }
+        })
+        availableCouncils.value = store.getters['boardCouncils/boardCouncils'] || []
+      } catch (e) {
+        console.error('Erreur lors du chargement des conseils disponibles:', e)
+      }
+    }
+
     const load = async () => {
       loading.value = true
       try {
+        // Charger le conseil actuel
         const res = await store.dispatch('boardCouncils/fetchBoardCouncil', route.params.councilId)
         council.value = res
         members.value = res.members || []
+        
+        // Charger la liste des conseils disponibles
+        await loadAvailableCouncils()
+        
+        // Mettre à jour le conseil sélectionné
+        selectedCouncilId.value = route.params.councilId
       } catch (e) {
         console.error('Erreur lors du chargement:', e)
       } finally {
         loading.value = false
+      }
+    }
+
+    const switchCouncil = async () => {
+      if (selectedCouncilId.value && selectedCouncilId.value !== route.params.councilId) {
+        // Naviguer vers le nouveau conseil
+        await router.push({
+          name: 'EntityMandateShow',
+          params: {
+            id: props.entityId || route.params.id,
+            councilId: selectedCouncilId.value
+          }
+        })
+        
+        // Recharger toutes les données pour le nouveau conseil
+        await load()
       }
     }
 
@@ -827,8 +924,15 @@ export default {
 
     const onSessionsUpdated = () => {
       // Optionnel : recharger les données du conseil si nécessaire
-      console.log('Sessions mises à jour')
     }
+
+    // Watcher pour recharger les données quand le councilId change
+    watch(() => route.params.councilId, (newCouncilId, oldCouncilId) => {
+      if (newCouncilId && newCouncilId !== oldCouncilId) {
+        selectedCouncilId.value = newCouncilId
+        load()
+      }
+    })
 
     onMounted(load)
 
@@ -878,6 +982,11 @@ export default {
       newUser,
       form,
       activeTab,
+      // Sélecteur de conseil
+      availableCouncils,
+      selectedCouncilId,
+      switchCouncil,
+      loadAvailableCouncils,
       // modal de remplacement
       showReplacementModal,
       selectedDirectorForReplacement,

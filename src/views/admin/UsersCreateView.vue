@@ -326,10 +326,9 @@ export default {
       try {
         // Simuler le chargement des rôles
         roles.value = [
-          { id: '1', name: 'Administrateur' },
-          { id: '2', name: 'Membre' },
-          { id: '3', name: 'Utilisateur' },
-          { id: '4', name: 'Observateur' }
+          { id: 'Super Administrateur', name: 'Super Administrateur' },
+          { id: 'Administrateur', name: 'Administrateur' },
+          { id: 'Membre', name: 'Membre' }
         ]
       } catch (error) {
         notifyError('Erreur lors du chargement des rôles')
@@ -349,13 +348,6 @@ export default {
       } catch (error) {
         console.error('Erreur lors du chargement des entités:', error)
         notifyError('Erreur lors du chargement des entités')
-        
-        // Fallback avec des données simulées
-        entities.value = [
-          { id: '1', name: 'Office National du Tourisme', sigle: 'ONT' },
-          { id: '2', name: 'Société Béninoise d\'Électricité', sigle: 'SBEE' },
-          { id: '3', name: 'Port Autonome de Cotonou', sigle: 'PAC' }
-        ]
       }
     }
     
@@ -377,23 +369,8 @@ export default {
       } catch (error) {
         console.error('Erreur lors du chargement des directeurs:', error)
         notifyError('Erreur lors du chargement des directeurs')
-        
-        // Fallback avec des données simulées
-        const directorsData = {
-          '1': [
-            { id: '1', nom_prenom: 'Alain KOUASSI', fonction: 'Président du Conseil d\'Administration' },
-            { id: '2', nom_prenom: 'Marie ADJOVI', fonction: 'Vice-Présidente' }
-          ],
-          '2': [
-            { id: '3', nom_prenom: 'Jean-Baptiste HOUNKPE', fonction: 'Président du Conseil d\'Administration' },
-            { id: '4', nom_prenom: 'Fatima ALASSANE', fonction: 'Secrétaire du Conseil' }
-          ],
-          '3': [
-            { id: '5', nom_prenom: 'Robert DOSSOU', fonction: 'Président du Conseil d\'Administration' }
-          ]
-        }
-        
-        boardDirectors.value = directorsData[form.value.entityId] || []
+
+        boardDirectors.value = []
         form.value.boardDirectorId = ''
       }
     }

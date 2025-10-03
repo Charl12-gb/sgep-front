@@ -436,9 +436,7 @@ export default {
           usersResults.value = []
         }
         
-        console.log('Résultats de recherche:', usersResults.value)
       } catch (error) {
-        console.error('Erreur lors de la recherche d\'utilisateurs:', error)
         notifyError('Erreur lors de la recherche d\'utilisateurs')
         usersResults.value = []
       } finally {
@@ -532,9 +530,6 @@ export default {
         } else {
           payload.new_user = newUser.value
         }
-
-        console.log('Payload envoyé:', payload)
-
         await store.dispatch('boardDirectors/replaceBoardDirector', {
           directorId: props.director.id,
           replacementData: payload

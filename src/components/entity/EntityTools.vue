@@ -10,9 +10,9 @@
       <!-- En-tête avec actions -->
       <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h5 class="mb-1">Outils de l'entité</h5>
+          <h5 class="mb-1">Outils de fonctionnement du Conseil</h5>
           <p class="text-muted mb-0">
-            Gérez les outils et leurs réponses pour cette entité
+            Gérez les outils de fonctionnement du conseil d'administration
           </p>
         </div>
         <div class="d-flex gap-2">
@@ -163,14 +163,23 @@
                         </span>
                       </td>
                       <td>
-                        <div v-if="tool.response">
-                          <div v-if="tool.type === 'boolean'">
-                            <span :class="tool.response.reponse_boolean ? 'text-success' : 'text-danger'">
-                              <i :class="tool.response.reponse_boolean ? 'fas fa-check' : 'fas fa-times'"></i>
-                              {{ tool.response.reponse_boolean ? 'Oui' : 'Non' }}
-                            </span>
+                        <div v-if="tool.type === 'boolean'">
+                          <div class="form-check">
+                            <input 
+                              :id="`checkbox-${tool.id}`"
+                              class="form-check-input" 
+                              type="checkbox" 
+                              :checked="!!tool.response?.reponse_boolean"
+                              @click="updateBooleanResponse(tool, !tool.response?.reponse_boolean)"
+                              :disabled="loading">
+                            <label :for="`checkbox-${tool.id}`" class="form-check-label">
+                              {{ tool.response?.reponse_boolean ? 'Oui' : 'Non' }}
+                              <span v-if="loading" class="spinner-border spinner-border-sm ms-1" role="status"></span>
+                            </label>
                           </div>
-                          <div v-else-if="tool.type === 'text' && tool.response.reponse_text">
+                        </div>
+                        <div v-else-if="tool.response">
+                          <div v-if="tool.type === 'text' && tool.response.reponse_text">
                             <span class="text-truncate d-inline-block" style="max-width: 200px" 
                                   :title="tool.response.reponse_text">
                               {{ tool.response.reponse_text }}
@@ -190,7 +199,7 @@
                             {{ formatDetails(tool.response.details) }}
                           </div>
                         </div>
-                        <span v-else class="text-muted fst-italic">Aucune réponse</span>
+                        <span v-else-if="tool.type !== 'boolean'" class="text-muted fst-italic">Aucune réponse</span>
                       </td>
                       <td>
                         <span v-if="tool.response && tool.response.updated_at" class="text-muted small">
@@ -201,6 +210,7 @@
                       <td>
                         <div class="btn-group btn-group-sm">
                           <button 
+                            v-if="tool.type !== 'boolean'"
                             @click="editResponse(tool)" 
                             class="btn btn-outline-primary btn-sm"
                             :title="tool.response ? 'Modifier la réponse' : 'Ajouter une réponse'">
@@ -271,7 +281,11 @@ export default {
   props: {
     entityId: {
       type: [String, Number],
-      required: true
+      required: false
+    },
+    boardCouncilId: {
+      type: [String, Number],
+      required: false
     },
     reloadData: {
       type: Function,
@@ -281,6 +295,9 @@ export default {
   setup(props) {
     const store = useStore()
     const { notifySuccess, notifyError } = useNotyf()
+
+    // Computed property pour déterminer l'ID à utiliser
+    const currentId = computed(() => props.boardCouncilId || props.entityId)
 
     // État local
     const loading = ref(false)
@@ -347,6 +364,11 @@ export default {
       if (!tools.value) return []
       
       return tools.value.filter(tool => {
+        // Ne garder que les outils de la catégorie "Outils de fonctionnement du Conseil"
+        if (tool.category !== 'Outils de fonctionnement du Conseil') {
+          return false
+        }
+
         // Filtre par terme de recherche
         if (searchTerm.value) {
           const term = searchTerm.value.toLowerCase()
@@ -356,7 +378,7 @@ export default {
           }
         }
 
-        // Filtre par catégorie
+        // Filtre par catégorie (désormais inutile car on ne garde qu'une catégorie)
         if (selectedCategory.value && tool.category !== selectedCategory.value) {
           return false
         }
@@ -411,11 +433,19 @@ export default {
         // Charger les outils disponibles
         await store.dispatch('outils/fetchOutils')
         
-        // Charger les réponses de l'entité pour l'année courante
-        await store.dispatch('outils/fetchEntityOutilsReponses', {
-          entityId: props.entityId,
-          annee: new Date().getFullYear()
-        })
+        // Charger les réponses du conseil d'administration pour l'année courante
+        if (props.boardCouncilId) {
+          await store.dispatch('outils/fetchBoardCouncilOutilsReponses', {
+            boardCouncilId: props.boardCouncilId,
+            annee: new Date().getFullYear()
+          })
+        } else if (props.entityId) {
+          // Fallback pour la compatibilité (deprecated)
+          await store.dispatch('outils/fetchEntityOutilsReponses', {
+            entityId: props.entityId,
+            annee: new Date().getFullYear()
+          })
+        }
         
         // Développer toutes les catégories par défaut si peu de catégories
         if (categories.value.length <= 3) {
@@ -474,10 +504,18 @@ export default {
     const initializeTools = async () => {
       try {
         loading.value = true
-        await store.dispatch('outils/initEntityOutils', {
-          entityId: props.entityId,
-          annee: new Date().getFullYear()
-        })
+        if (props.boardCouncilId) {
+          await store.dispatch('outils/initBoardCouncilOutils', {
+            boardCouncilId: props.boardCouncilId,
+            annee: new Date().getFullYear()
+          })
+        } else if (props.entityId) {
+          // Fallback pour la compatibilité (deprecated)
+          await store.dispatch('outils/initEntityOutils', {
+            entityId: props.entityId,
+            annee: new Date().getFullYear()
+          })
+        }
         notifySuccess('Outils initialisés avec succès')
         await loadTools()
       } catch (error) {
@@ -496,6 +534,50 @@ export default {
         console.error('Erreur lors de l\'export:', error)
         notifyError('Erreur lors de l\'export')
       }
+    }
+
+    const updateBooleanResponse = async (tool, value) => {
+      if (loading.value) return
+      
+      loading.value = true
+      try {
+        const reponseData = {
+          board_council_id: props.boardCouncilId || props.entityId,
+          outil_id: tool.id,
+          annee: new Date().getFullYear(),
+          reponse_boolean: value
+        }
+        
+        // Utiliser la bonne méthode selon le contexte
+        if (props.boardCouncilId) {
+          await store.dispatch('outils/saveBoardCouncilReponse', {
+            boardCouncilId: props.boardCouncilId,
+            reponseData
+          })
+        } else if (props.entityId) {
+          // Fallback pour la compatibilité (deprecated)
+          await store.dispatch('outils/saveEntityReponse', {
+            entityId: props.entityId,
+            reponseData
+          })
+        }
+        
+        notifySuccess('Réponse mise à jour avec succès')
+        
+      } catch (error) {
+        console.error('Erreur lors de la mise à jour:', error)
+        notifyError('Erreur lors de la mise à jour de la réponse')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const getBooleanValue = (tool) => {
+      return tool.response?.reponse_boolean === true
+    }
+    
+    const isToolUpdating = (tool) => {
+      return loading.value
     }
 
     // Méthodes utilitaires
@@ -586,15 +668,15 @@ export default {
     }
 
     // Watchers
-    watch(() => props.entityId, () => {
-      if (props.entityId) {
+    watch(() => [props.entityId, props.boardCouncilId], () => {
+      if (currentId.value) {
         loadTools()
       }
     })
 
     // Lifecycle
     onMounted(() => {
-      if (props.entityId) {
+      if (currentId.value) {
         loadTools()
       }
     })
@@ -624,6 +706,9 @@ export default {
       handleResponseSaved,
       initializeTools,
       exportToExcel,
+      updateBooleanResponse,
+      getBooleanValue,
+      isToolUpdating,
       getTypeClass,
       getTypeLabel,
       getStatusClass,

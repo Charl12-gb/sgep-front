@@ -38,7 +38,7 @@ const dashboardRoutes = [
   {
     path: '/dashboard',
     name: 'Dashboard',
-    component: () => import('@/views/entities/EntitiesListView.vue'),
+    component: () => import('@/views/entities/EntitiesShowView.vue'),
     meta: { 
       requiresAuth: true,
       breadcrumb: 'Tableau de bord'
@@ -48,15 +48,6 @@ const dashboardRoutes = [
 
 // Entities routes
 const entityRoutes = [
-  {
-    path: '/entities',
-    name: 'EntitiesList',
-    component: () => import('@/views/entities/EntitiesListView.vue'),
-    meta: { 
-      requiresAuth: true,
-      breadcrumb: 'Entités'
-    }
-  },
   {
     path: '/entities/create',
     name: 'EntitiesCreate',

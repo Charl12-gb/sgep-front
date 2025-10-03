@@ -53,36 +53,6 @@
                   </h6>
                 </div>
                 <div class="col-md-6">
-                  <label for="firstName" class="form-label">Prénom <span class="text-danger">*</span></label>
-                  <input
-                    id="firstName"
-                    v-model="form.firstName"
-                    type="text"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.firstName }"
-                    placeholder="Prénom de l'utilisateur"
-                    required
-                  />
-                  <div v-if="errors.firstName" class="invalid-feedback">
-                    {{ errors.firstName }}
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <label for="lastName" class="form-label">Nom <span class="text-danger">*</span></label>
-                  <input
-                    id="lastName"
-                    v-model="form.lastName"
-                    type="text"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.lastName }"
-                    placeholder="Nom de l'utilisateur"
-                    required
-                  />
-                  <div v-if="errors.lastName" class="invalid-feedback">
-                    {{ errors.lastName }}
-                  </div>
-                </div>
-                <div class="col-md-6">
                   <label for="email" class="form-label">Adresse email <span class="text-danger">*</span></label>
                   <input
                     id="email"
@@ -346,14 +316,12 @@ export default {
     const boardDirectors = ref([])
     
     const form = ref({
-      firstName: '',
-      lastName: '',
       email: '',
       phoneNumber: '',
       username: '',
       password: '',
       confirmPassword: '',
-      roleId: '',
+      roleId: 'Membre',
       entityId: '',
       boardDirectorId: '',
       isActive: true
@@ -372,14 +340,12 @@ export default {
         
         // Remplir le formulaire avec les données existantes
         form.value = {
-          firstName: userData.first_name || '',
-          lastName: userData.last_name || '',
           email: userData.email || '',
           phoneNumber: userData.phone_number || '',
           username: userData.username || '',
           password: '',
           confirmPassword: '',
-          roleId: userData.role_id?.toString() || '',
+          roleId: userData.role?.name || 'Membre',
           entityId: userData.entity_id?.toString() || '',
           boardDirectorId: userData.board_director_id?.toString() || '',
           isActive: userData.is_active || false
@@ -400,10 +366,9 @@ export default {
     const loadRoles = async () => {
       try {
         roles.value = [
-          { id: '1', name: 'Administrateur' },
-          { id: '2', name: 'Membre' },
-          { id: '3', name: 'Utilisateur' },
-          { id: '4', name: 'Observateur' }
+          { id: 'Super Administrateur', name: 'Super Administrateur' },
+          { id: 'Administrateur', name: 'Administrateur' },
+          { id: 'Membre', name: 'Membre' }
         ]
       } catch (error) {
         notifyError('Erreur lors du chargement des rôles')
@@ -416,13 +381,6 @@ export default {
         await store.dispatch('entities/fetchEntities')
         entities.value = store.getters['entities/entities']
       } catch (error) {
-        console.error('Erreur lors du chargement des entités:', error)
-        // Fallback avec des données simulées
-        entities.value = [
-          { id: '1', name: 'Office National du Tourisme', sigle: 'ONT' },
-          { id: '2', name: 'Société Béninoise d\'Électricité', sigle: 'SBEE' },
-          { id: '3', name: 'Port Autonome de Cotonou', sigle: 'PAC' }
-        ]
       }
     }
     
@@ -461,14 +419,6 @@ export default {
     
     const validateForm = () => {
       errors.value = {}
-      
-      if (!form.value.firstName.trim()) {
-        errors.value.firstName = 'Le prénom est obligatoire'
-      }
-      
-      if (!form.value.lastName.trim()) {
-        errors.value.lastName = 'Le nom est obligatoire'
-      }
       
       if (!form.value.email.trim()) {
         errors.value.email = 'L\'email est obligatoire'
@@ -509,8 +459,6 @@ export default {
       try {
         const updateData = {
           id: user.value.id,
-          first_name: form.value.firstName,
-          last_name: form.value.lastName,
           email: form.value.email,
           phone_number: form.value.phoneNumber,
           username: form.value.username,

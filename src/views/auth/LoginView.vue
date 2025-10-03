@@ -115,7 +115,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { useNotyf } from '@/mixins/useNotyf'
@@ -176,6 +176,13 @@ export default {
         loading.value = false
       }
     }
+
+    // Nettoyer le localStorage au montage du composant de login
+    onMounted(() => {
+      // Supprimer l'entité sélectionnée du localStorage
+      localStorage.removeItem('selectedEntity')
+      localStorage.removeItem('selectedEntityId')
+    })
     
     return {
       form,

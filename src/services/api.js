@@ -1,8 +1,10 @@
 import axios from 'axios';
 import router from '@/router'; // Assurez-vous que votre routeur Vue est bien importé
+import { VUE_APP_BASE_API_URL } from '@/env';
+import { VUE_APP_FILE_URL } from '@/env';
 
-export const BASE_API_URL = process.env.VUE_APP_BASE_API_URL || 'http://localhost:8000/api/v1'
-export const APP_FILE_URL = process.env.VUE_APP_FILE_URL || 'http://localhost:8000'
+export const BASE_API_URL = VUE_APP_BASE_API_URL || 'https://sgep.api.it-servicegroup.com/api/v1'
+export const APP_FILE_URL = VUE_APP_FILE_URL || 'https://sgep.api.it-servicegroup.com'
 
 const api = axios.create({
     baseURL: BASE_API_URL

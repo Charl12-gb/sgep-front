@@ -409,10 +409,7 @@ export default {
            }
         })
         
-        boardCouncils.value = store.getters['boardCouncils/boardCouncils']
-
-        console.log('Conseils d\'administration chargés:', boardCouncils.value)
-        
+        boardCouncils.value = store.getters['boardCouncils/boardCouncils']        
         // Réinitialiser la sélection du directeur
         form.value.boardCouncilId = ''
       } catch (error) {

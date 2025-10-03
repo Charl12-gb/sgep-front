@@ -1,8 +1,10 @@
 import api from '@/services/api'
+import { localStorageUtil, STORAGE_KEYS } from '@/utils/localStorage'
 
 const state = {
   entities: [],
   entity: null,
+  selectedEntity: localStorageUtil.get(STORAGE_KEYS.SELECTED_ENTITY, null),
   entityStats: null,
   entitiesStats: null,
   filterOptions: {
@@ -49,6 +51,17 @@ const mutations = {
   },
   SET_ENTITY(state, entity) {
     state.entity = entity
+  },
+  SET_SELECTED_ENTITY(state, entity) {
+    state.selectedEntity = entity
+    // Sauvegarder dans localStorage (entité complète et ID séparément pour compatibilité)
+    if (entity) {
+      localStorageUtil.set(STORAGE_KEYS.SELECTED_ENTITY, entity)
+      localStorageUtil.set(STORAGE_KEYS.SELECTED_ENTITY_ID, entity.id)
+    } else {
+      localStorageUtil.remove(STORAGE_KEYS.SELECTED_ENTITY)
+      localStorageUtil.remove(STORAGE_KEYS.SELECTED_ENTITY_ID)
+    }
   },
   SET_ENTITY_STATS(state, stats) {
     state.entityStats = stats
@@ -102,6 +115,70 @@ const mutations = {
 }
 
 const actions = {
+  // Action pour sélectionner une entité
+  selectEntity({ commit }, entity) {
+    commit('SET_SELECTED_ENTITY', entity)
+  },
+  
+  // Action pour charger l'entité sélectionnée depuis localStorage
+  async loadSelectedEntity({ commit, state, dispatch }) {    
+    const savedEntity = localStorageUtil.get(STORAGE_KEYS.SELECTED_ENTITY)
+    if (savedEntity) {
+      commit('SET_SELECTED_ENTITY', savedEntity)
+      return savedEntity
+    }
+    
+    // Fallback : si on a juste l'ID, essayer de trouver l'entité dans la liste
+    const savedEntityId = localStorageUtil.get(STORAGE_KEYS.SELECTED_ENTITY_ID)
+    if (savedEntityId) {      
+      // Si les entités sont déjà chargées, chercher dedans
+      if (state.entities.length > 0) {
+        const entity = state.entities.find(e => e.id === parseInt(savedEntityId))
+        if (entity) {
+          commit('SET_SELECTED_ENTITY', entity)
+          return entity
+        }
+      }
+      
+      // Sinon, charger l'entité depuis l'API
+      try {
+        const entity = await dispatch('fetchEntityById', savedEntityId)
+        if (entity) {
+          commit('SET_SELECTED_ENTITY', entity)
+          return entity
+        }
+      } catch (error) {
+        // Nettoyer le localStorage si l'entité n'existe plus
+        localStorageUtil.remove(STORAGE_KEYS.SELECTED_ENTITY)
+        localStorageUtil.remove(STORAGE_KEYS.SELECTED_ENTITY_ID)
+      }
+    }    
+    return null
+  },
+  
+  // Action pour sélectionner une entité par ID
+  async selectEntityById({ commit, state, dispatch }, entityId) {
+    // Chercher d'abord dans les entités déjà chargées
+    let entity = state.entities.find(e => e.id === parseInt(entityId))
+    
+    if (!entity) {
+      // Si pas trouvée, la charger depuis l'API
+      try {
+        entity = await dispatch('fetchEntityById', entityId)
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'entité:', error)
+        return null
+      }
+    }
+    
+    if (entity) {
+      commit('SET_SELECTED_ENTITY', entity)
+      return entity
+    }
+    
+    return null
+  },
+  
   async fetchEntities({ commit, state }, customParams = {}) {
     commit('SET_LOADING', true)
     try {
@@ -280,12 +357,41 @@ const actions = {
     } finally {
       commit('SET_LOADING', false)
     }
+  },
+  
+  // Action pour initialiser les entités au démarrage
+  async initializeEntities({ dispatch, state }) {
+    try {
+      // D'abord essayer de charger l'entité sélectionnée depuis localStorage (au cas où on aurait juste l'ID)
+      let selectedEntity = await dispatch('loadSelectedEntity')
+      
+      // Charger les entités disponibles
+      await dispatch('fetchEntities', { per_page: 100 })
+      
+      // Si on n'avait pas trouvé l'entité avant, réessayer maintenant qu'on a la liste
+      if (!selectedEntity) {
+        selectedEntity = await dispatch('loadSelectedEntity')
+      }
+      
+      // Si toujours aucune entité sélectionnée, prendre la première
+      if (!selectedEntity && state.entities.length > 0) {
+        const firstEntity = state.entities[0]
+        await dispatch('selectEntity', firstEntity)
+        selectedEntity = firstEntity
+      }
+      
+      return selectedEntity
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation des entités:', error)
+      throw error
+    }
   }
 }
 
 const getters = {
   entities: state => state.entities,
   entity: state => state.entity,
+  selectedEntity: state => state.selectedEntity,
   entityStats: state => state.entityStats,
   entitiesStats: state => state.entitiesStats,
   filterOptions: state => state.filterOptions,

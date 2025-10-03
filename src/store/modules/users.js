@@ -62,9 +62,7 @@ const actions = {
       commit('CLEAR_ERROR')
       
       api.get(`/users?page=${page}&limit=${limit}&search=${search}`)
-        .then((response) => {
-          console.log('API Response:', response.data)
-          
+        .then((response) => {          
           // L'API peut retourner différentes structures selon le backend
           let users = []
           let pagination = {}
@@ -103,9 +101,7 @@ const actions = {
                 has_previous: false
               }
             }
-          }
-          
-          console.log('Parsed users:', users)
+          }          
           commit('SET_USERS', users || [])
           commit('SET_PAGINATION', pagination)
           commit('SET_LOADING', false)
@@ -123,26 +119,15 @@ const actions = {
   fetchAllUsers({ commit }) {
     return new Promise((resolve, reject) => {
       commit('SET_LOADING', true)
-      commit('CLEAR_ERROR')
-
-      console.log('Fetching users from /users/all...')
-      
+      commit('CLEAR_ERROR')      
       api.get('/users/all')
         .then((response) => {
-          console.log('Raw API response for /users/all:', response)
-          console.log('Response data:', response.data)
-          
           const users = Array.isArray(response.data) ? response.data : []
-          console.log('Processed users:', users)
-          
           commit('SET_ALL_USERS', users)
           commit('SET_LOADING', false)
           resolve(response.data)
         })
         .catch((error) => {
-          console.error('Error fetching all users:', error)
-          console.error('Error response:', error.response)
-          
           const message = error.response?.data?.detail || 'Erreur lors de la récupération des utilisateurs'
           commit('SET_ERROR', message)
           commit('SET_LOADING', false)

@@ -182,16 +182,6 @@
                     </li>
                   </ul>
                 </div>
-
-                <!-- Export -->
-                <button 
-                  @click="exportEntities"
-                  class="btn btn-outline-success btn-sm"
-                  :disabled="!hasEntities"
-                >
-                  <i class="fas fa-download me-1"></i>
-                  Exporter
-                </button>
               </div>
             </div>
           </div>
@@ -428,11 +418,6 @@ export default {
       await store.dispatch('entities/updateSort', { sort_by, sort_order })
     }
 
-    const exportEntities = () => {
-      // TODO: Implémenter l'export
-      console.log('Export des entités')
-    }
-
     // Watchers
     watch(() => store.getters['entities/filters'], (newFilters) => {
       localFilters.value = { ...newFilters }
@@ -457,8 +442,7 @@ export default {
       clearSearch,
       resetAllFilters,
       toggleAdvanced,
-      updateSort,
-      exportEntities
+      updateSort
     }
   }
 }
