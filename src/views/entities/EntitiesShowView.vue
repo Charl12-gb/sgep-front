@@ -294,6 +294,7 @@
                     </div>
                   </div>
                 </div>
+
               </div>
 
 
@@ -303,7 +304,22 @@
                 @save="handleDirectionSave" @delete="handleDirectionDelete" :reload-data="loadEntity" />
 
               <!-- Onglet Mandats -->
-              <MandatesView v-show="activeTab === 'board'" :entityId="entity?.id" />
+              <div v-show="activeTab === 'board'">
+                <div v-if="boardCouncils && boardCouncils.length > 0">
+                  <MandatesView :entityId="entity?.id" @create-board-council="createNewBoardCouncil" />
+                </div>
+                <div v-else class="text-center py-5">
+                  <div class="mb-4">
+                    <i class="fas fa-users fa-4x text-muted"></i>
+                  </div>
+                  <h4 class="text-muted mb-3">Aucun conseil d'administration</h4>
+                  <p class="text-muted mb-4">Cette entité n'a pas encore de conseil d'administration configuré.</p>
+                  <button @click="createNewBoardCouncil" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus me-2"></i>
+                    Créer un conseil d'administration
+                  </button>
+                </div>
+              </div>
 
               <!-- Onglet Commissaires aux Comptes -->
               <EntityOfficers v-show="activeTab === 'officers'" :officers="accountingOfficers" :entity-id="entity.id"
@@ -322,10 +338,77 @@
       </div>
       <h5 class="text-muted">Entité non trouvée</h5>
       <p class="text-muted mb-4">L'entité demandée n'existe pas ou a été supprimée.</p>
-      <router-link to="/entities" class="btn btn-success">
+      <router-link 
+        v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')"
+        to="/entities/create" 
+        class="btn btn-success"
+      >
+        <i class="fas fa-plus me-2"></i>
+        Ajouter une entité
+      </router-link>
+      <router-link v-else to="/entities" class="btn btn-secondary">
         <i class="fas fa-arrow-left me-2"></i>
         Retour à la liste
       </router-link>
+    </div>
+
+    <!-- Modal Création Conseil d'Administration -->
+    <div class="modal fade" id="boardCouncilModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Créer un conseil d'administration</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="saveBoardCouncil">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Date de début <span class="text-danger">*</span></label>
+                  <input type="date" v-model="boardCouncilForm.start_date" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Date de fin <span class="text-danger">*</span></label>
+                  <input type="date" v-model="boardCouncilForm.end_date" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Durée (en mois)</label>
+                  <input type="number" v-model="boardCouncilForm.duration_months" class="form-control" min="1" max="120"
+                    placeholder="Ex: 36 mois">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Date d'installation</label>
+                  <input type="date" v-model="boardCouncilForm.date_installation" class="form-control">
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold">Référence du décret</label>
+                  <input type="text" v-model="boardCouncilForm.reference_decret" class="form-control" 
+                    placeholder="Référence du décret de nomination...">
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold">PV d'installation</label>
+                  <input type="text" v-model="boardCouncilForm.pv_installation" class="form-control" 
+                    placeholder="Référence du procès-verbal d'installation...">
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold">Statut</label>
+                  <select v-model="boardCouncilForm.status" class="form-control">
+                    <option value="active">Actif</option>
+                    <option value="inactive">Inactif</option>
+                  </select>
+                </div>
+              </div>
+              <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-success" :disabled="loadingBoardCouncil">
+                  <i v-if="loadingBoardCouncil" class="fas fa-spinner fa-spin me-2"></i>
+                  Créer le conseil
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -372,10 +455,24 @@ export default {
     })
     const effectifToDelete = ref(null)
 
+    // Variables pour la gestion du conseil d'administration
+    const loadingBoardCouncil = ref(false)
+    const boardCouncilForm = ref({
+      start_date: '',
+      end_date: '',
+      duration_months: null,
+      date_installation: '',
+      reference_decret: '',
+      pv_installation: '',
+      status: 'active',
+      entity_id: null
+    })
+
     // Computed properties
     const entity = computed(() => store.getters['entities/entity'])
     const selectedEntity = computed(() => store.getters['entities/selectedEntity'])
     const entityStats = computed(() => store.getters['entities/entityStats'])
+    const user = computed(() => store.getters['auth/user'])
 
     // Fonction pour récupérer l'ID d'entité depuis différentes sources
     const getEntityId = () => {
@@ -558,11 +655,14 @@ export default {
 
     const setActiveTab = (tab) => {
       if (tab === 'board') {
-        // Rediriger vers la page des conseils d'administration
-        redirectToBoardCouncil()
-      } else {
-        activeTab.value = tab
+        // Si il y a des conseils d'administration, rediriger vers le conseil actif
+        const councils = boardCouncils.value || []
+        if (councils.length > 0) {
+          redirectToBoardCouncil()
+          return
+        }
       }
+      activeTab.value = tab
     }
 
     const redirectToBoardCouncil = () => {
@@ -575,12 +675,13 @@ export default {
       // Trouver le premier conseil actif ou le plus récent
       const councils = boardCouncils.value || []
       if (councils.length === 0) {
-        notifyError('Aucun conseil d\'administration trouvé pour cette entité')
+        // S'il n'y a pas de conseil, rester sur l'onglet pour afficher le message
+        activeTab.value = 'board'
         return
       }
 
-      // Priorité : conseil avec is_current_director = true, sinon le plus récent
-      const activeCouncil = councils.find(c => c.is_current_director) || councils[0]
+      // Priorité : conseil avec status = "active", sinon le plus récent
+      const activeCouncil = councils.find(c => c.status === 'active') || councils[0]
 
       router.push({
         name: 'EntityMandateShow',
@@ -591,8 +692,98 @@ export default {
       })
     }
 
+
+
     const goBackToDashboard = () => {
       setActiveTab('dashboard')
+    }
+
+    const createNewBoardCouncil = () => {
+      const entityId = currentEntityId.value || getEntityId()
+      if (!entityId) {
+        notifyError('Aucune entité sélectionnée')
+        return
+      }
+
+      // Réinitialiser le formulaire
+      boardCouncilForm.value = {
+        start_date: '',
+        end_date: '',
+        duration_months: null,
+        date_installation: '',
+        reference_decret: '',
+        pv_installation: '',
+        status: 'active',
+        entity_id: entityId
+      }
+
+      // Ouvrir le modal
+      setTimeout(() => {
+        const modalElement = document.getElementById('boardCouncilModal')
+        if (modalElement) {
+          const modal = Modal.getOrCreateInstance(modalElement)
+          modal.show()
+        }
+      }, 100)
+    }
+
+    const saveBoardCouncil = async () => {
+      if (loadingBoardCouncil.value) return
+
+      // Validation basique
+      if (!boardCouncilForm.value.start_date) {
+        notifyError('Veuillez saisir une date de début')
+        return
+      }
+
+      if (!boardCouncilForm.value.end_date) {
+        notifyError('Veuillez saisir une date de fin')
+        return
+      }
+
+      if (boardCouncilForm.value.end_date <= boardCouncilForm.value.start_date) {
+        notifyError('La date de fin doit être postérieure à la date de début')
+        return
+      }
+
+      if (boardCouncilForm.value.date_installation && boardCouncilForm.value.date_installation > boardCouncilForm.value.start_date) {
+        notifyError('La date d\'installation ne peut pas être postérieure à la date de début')
+        return
+      }
+
+      loadingBoardCouncil.value = true
+      try {
+        const payload = {
+          start_date: boardCouncilForm.value.start_date,
+          end_date: boardCouncilForm.value.end_date,
+          duration_months: boardCouncilForm.value.duration_months || null,
+          date_installation: boardCouncilForm.value.date_installation || null,
+          reference_decret: boardCouncilForm.value.reference_decret || null,
+          pv_installation: boardCouncilForm.value.pv_installation || null,
+          status: boardCouncilForm.value.status,
+          entity_id: currentEntityId.value || getEntityId()
+        }
+
+        await store.dispatch('boardCouncils/createBoardCouncil', payload)
+        
+        // Fermer le modal
+        const modalElement = document.getElementById('boardCouncilModal')
+        if (modalElement) {
+          const modal = Modal.getInstance(modalElement)
+          if (modal) modal.hide()
+        }
+
+        // Recharger les données
+        await loadBoardCouncils()
+        await loadEntity()
+
+        notifySuccess('Conseil d\'administration créé avec succès')
+      } catch (error) {
+        console.error('Erreur lors de la création du conseil:', error)
+        notifyError(error?.detail || 'Erreur lors de la création du conseil d\'administration')
+      } finally {
+        loadingBoardCouncil.value = false
+      }
     }
 
     // Watcher pour surveiller les changements d'entité sélectionnée dans le store
@@ -643,7 +834,6 @@ export default {
               // Réessayer dans 100ms
               setTimeout(checkSelectedEntity, 100)
             } else {
-              notifyError('Aucune entité sélectionnée')
             }
           }
 
@@ -762,6 +952,7 @@ export default {
     const cleanupModals = () => {
       const effectifModalEl = document.getElementById('effectifModal')
       const deleteModalEl = document.getElementById('deleteEffectifModal')
+      const boardCouncilModalEl = document.getElementById('boardCouncilModal')
 
       if (effectifModalEl) {
         const modal = Modal.getInstance(effectifModalEl)
@@ -770,6 +961,11 @@ export default {
 
       if (deleteModalEl) {
         const modal = Modal.getInstance(deleteModalEl)
+        if (modal) modal.dispose()
+      }
+
+      if (boardCouncilModalEl) {
+        const modal = Modal.getInstance(boardCouncilModalEl)
         if (modal) modal.dispose()
       }
     }
@@ -824,9 +1020,11 @@ export default {
       loading,
       activeTab,
       currentEntityId,
+      user,
       getEntityId,
       setActiveTab,
       goBackToDashboard,
+      createNewBoardCouncil,
       handleDirectionDataUpdated,
       handleDirectionSave,
       handleDirectionDelete,
@@ -845,7 +1043,12 @@ export default {
       saveEffectif,
       confirmDeleteEffectif,
       deleteEffectif,
-      resetEffectifForm
+      resetEffectifForm,
+      // Variables pour le conseil d'administration
+      loadingBoardCouncil,
+      boardCouncilForm,
+      // Méthodes pour le conseil d'administration
+      saveBoardCouncil
     }
   }
 }

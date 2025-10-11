@@ -20,6 +20,18 @@
           <i class="fas fa-plus me-1"></i>
           Ajouter Mandat
         </button>
+        <button class="btn btn-primary btn-sm ms-2" @click="showBoardCouncilModal()">
+          <i class="fas fa-users me-1"></i>
+          Ajouter BoardCouncil
+        </button>
+        <button 
+          v-if="activeCouncil" 
+          class="btn btn-warning btn-sm ms-2" 
+          @click="confirmDeactivateCouncil(activeCouncil)"
+          :title="`Désactiver le conseil actuel: ${activeCouncil.reference_decret || 'Sans référence'}`">
+          <i class="fas fa-pause me-1"></i>
+          Désactiver Conseil Actuel
+        </button>
       </div>
     </div>
 
@@ -241,6 +253,33 @@
       @modal-closed="onSessionModalClosed"
       ref="sessionModal"
     />
+
+    <!-- Modal Confirmation Désactivation Conseil -->
+    <div class="modal fade" id="deactivateCouncilModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmer la désactivation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir désactiver ce conseil d'administration ?</p>
+            <p class="text-warning fw-semibold mb-0" v-if="councilToDeactivate">
+              <strong>Référence :</strong> {{ councilToDeactivate.reference_decret || 'Sans référence' }}<br>
+              <strong>Période :</strong> {{ councilToDeactivate.start_date }} - {{ councilToDeactivate.end_date }}
+            </p>
+            <small class="text-muted">Cette action changera le statut du conseil à "inactif".</small>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-warning" @click="deactivateCouncil" :disabled="loading">
+              <i v-if="loading" class="fas fa-spinner fa-spin me-2"></i>
+              Désactiver
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -364,6 +403,10 @@ export default {
       has_previous: false,
       has_next: false,
       total_items: 0
+    })
+
+    const activeCouncil = computed(() => {
+      return councils.value.find(council => council.status === 'active')
     })
 
     const loadCouncils = async (page = 1) => {
@@ -612,6 +655,58 @@ export default {
       }
     }
 
+    // Méthode pour ouvrir le modal de création de BoardCouncil
+    const showBoardCouncilModal = () => {
+      // Émettre un événement vers le parent pour ouvrir le modal de BoardCouncil
+      emit('create-board-council')
+    }
+
+    // Variables pour la désactivation du conseil
+    const councilToDeactivate = ref(null)
+
+    // Méthode pour confirmer la désactivation du conseil actuel
+    const confirmDeactivateCouncil = (council) => {
+      councilToDeactivate.value = council
+      // Ouvrir le modal de confirmation
+      const modalElement = document.getElementById('deactivateCouncilModal')
+      if (modalElement) {
+        const modal = new Modal(modalElement)
+        modal.show()
+      }
+    }
+
+    // Méthode pour désactiver le conseil
+    const deactivateCouncil = async () => {
+      if (!councilToDeactivate.value) return
+
+      loading.value = true
+      try {
+        await store.dispatch('boardCouncils/updateBoardCouncil', {
+          id: councilToDeactivate.value.id,
+          payload: { status: 'inactive' }
+        })
+
+        // Fermer le modal
+        const modalElement = document.getElementById('deactivateCouncilModal')
+        if (modalElement) {
+          const modal = Modal.getInstance(modalElement)
+          if (modal) modal.hide()
+        }
+
+        // Recharger les données
+        await loadCouncils()
+        emit('data-updated')
+
+        notifySuccess('Conseil d\'administration désactivé avec succès')
+      } catch (error) {
+        console.error('Erreur lors de la désactivation du conseil:', error)
+        notifyError('Erreur lors de la désactivation du conseil d\'administration')
+      } finally {
+        loading.value = false
+        councilToDeactivate.value = null
+      }
+    }
+
     onMounted(() => {
       loadCouncils()
     })
@@ -653,7 +748,13 @@ export default {
       createSessionForCouncil,
       onSessionSaved,
       onSessionModalClosed,
-      toggleCouncilStatus
+      toggleCouncilStatus,
+      // Nouvelles méthodes et variables
+      activeCouncil,
+      showBoardCouncilModal,
+      confirmDeactivateCouncil,
+      deactivateCouncil,
+      councilToDeactivate
     }
   }
 }

@@ -25,19 +25,30 @@
         </div>
       </div>
       
-      <div class="flex-grow-1">
-        <div class="d-flex align-items-center justify-content-center">
-          <div class="text-center">
-            <h2 class="mb-0">Conseil d'administration</h2>
-            <small class="text-muted">{{ council.reference_decret || 'Référence non définie' }}</small>
-          </div>
-        </div>
-      </div>
-      
       <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-success" @click="openCreateModal" title="Ajouter un membre">
+        <button class="btn btn-sm btn-success ms-5" @click="openCreateModal" title="Ajouter un membre">
           <i class="fas fa-user-plus"></i>
           Ajouter un membre
+        </button>
+        <button class="btn btn-primary btn-sm ms-2" @click="showBoardCouncilModal()">
+          <i class="fas fa-users me-1"></i>
+          Ajouter BoardCouncil
+        </button>
+        <button 
+          v-if="activeCouncil" 
+          class="btn btn-warning btn-sm ms-2" 
+          @click="confirmDeactivateCouncil(activeCouncil)"
+          :title="`Désactiver le conseil actuel: ${activeCouncil.reference_decret || 'Sans référence'}`">
+          <i class="fas fa-pause me-1"></i>
+          Désactiver Conseil Actuel
+        </button>
+        <button 
+          v-if="inactiveCouncil && !activeCouncil" 
+          class="btn btn-success btn-sm ms-2" 
+          @click="confirmActivateCouncil(inactiveCouncil)"
+          :title="`Activer le conseil: ${inactiveCouncil.reference_decret || 'Sans référence'}`">
+          <i class="fas fa-play me-1"></i>
+          Activer Conseil
         </button>
       </div>
     </nav>
@@ -82,10 +93,23 @@
             <div class="col-lg-8">
               <div class="card bg-light border-0 shadow-sm">
                 <div class="card-body">
-                  <div class="small text-muted">Date d'installation</div>
-                  <div class="fw-medium">{{ formatDate(council.date_installation) || '—' }}</div>
-                  <div class="small text-muted mt-2">Période</div>
-                  <div class="fw-medium">{{ formatDate(council.start_date) || '—' }} → {{ formatDate(council.end_date) || '—' }}</div>
+                  <div class="d-flex align-items-center gap-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                      <div class="bg-primary text-white rounded d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
+                        <i class="fas fa-users fa-lg"></i>
+                      </div>
+                      <div>
+                        <h5 class="mb-0">Conseil: {{ council.reference_decret || 'Référence non définie' }}</h5>
+                        <small class="text-muted">{{ council.is_current_director ? 'Conseil Actuel' : 'Conseil Inactif' }}</small>
+                      </div>
+                    </div>
+                    <div class="text-end ms-auto">
+                      <div class="small text-muted">Date d'installation</div>
+                      <div class="fw-medium">{{ formatDate(council.date_installation) || '—' }}</div>
+                      <div class="small text-muted mt-2">Période</div>
+                      <div class="fw-medium">{{ formatDate(council.start_date) || '—' }} → {{ formatDate(council.end_date) || '—' }}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -399,6 +423,117 @@
       @replaced="onDirectorReplaced"
       @show-history="openHistoryModal"
     />
+
+    <!-- Modal de confirmation de désactivation de conseil -->
+    <div class="modal fade" id="deactivateCouncilModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmer la désactivation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir désactiver ce conseil d'administration ?</p>
+            <p class="text-warning fw-semibold mb-0" v-if="councilToDeactivate">
+              {{ councilToDeactivate.reference_decret || 'Conseil sans référence' }}
+            </p>
+            <small class="text-muted">Cette action changera le statut du conseil à "inactif".</small>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-warning" @click="deactivateCouncil" :disabled="loading">
+              <i v-if="loading" class="fas fa-spinner fa-spin me-2"></i>
+              Désactiver
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de confirmation d'activation de conseil -->
+    <div class="modal fade" id="activateCouncilModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmer l'activation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir activer ce conseil d'administration ?</p>
+            <p class="text-success fw-semibold mb-0" v-if="councilToActivate">
+              {{ councilToActivate.reference_decret || 'Conseil sans référence' }}
+            </p>
+            <small class="text-muted">Cette action changera le statut du conseil à "actif".</small>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-success" @click="activateCouncil" :disabled="loading">
+              <i v-if="loading" class="fas fa-spinner fa-spin me-2"></i>
+              Activer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Création Conseil d'Administration -->
+    <div class="modal fade" id="boardCouncilModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Créer un conseil d'administration</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="saveBoardCouncil">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Date de début <span class="text-danger">*</span></label>
+                  <input type="date" v-model="boardCouncilForm.start_date" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Date de fin <span class="text-danger">*</span></label>
+                  <input type="date" v-model="boardCouncilForm.end_date" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Durée (en mois) <small class="text-muted">(calculée automatiquement)</small></label>
+                  <input type="number" v-model="boardCouncilForm.duration_months" class="form-control" readonly
+                    placeholder="Sélectionnez les dates de début et fin">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Date d'installation</label>
+                  <input type="date" v-model="boardCouncilForm.date_installation" class="form-control">
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold">Référence du décret</label>
+                  <input type="text" v-model="boardCouncilForm.reference_decret" class="form-control" 
+                    placeholder="Référence du décret de nomination...">
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold">PV d'installation</label>
+                  <input type="text" v-model="boardCouncilForm.pv_installation" class="form-control" 
+                    placeholder="Référence du procès-verbal d'installation...">
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold">Statut</label>
+                  <select v-model="boardCouncilForm.status" class="form-control">
+                    <option value="active">Actif</option>
+                    <option value="inactive">Inactif</option>
+                  </select>
+                </div>
+              </div>
+              <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-success" :disabled="loadingBoardCouncil">
+                  <i v-if="loadingBoardCouncil" class="fas fa-spinner fa-spin me-2"></i>
+                  Créer le conseil
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -406,6 +541,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
+import { Modal } from 'bootstrap'
+import { useNotyf } from '@/mixins/useNotyf'
 import api from '@/services/api'
 import SessionsList from '@/components/sessions/SessionsList.vue'
 import BoardDirectorReplacement from '@/components/board-directors/BoardDirectorReplacement.vue'
@@ -427,6 +564,7 @@ export default {
     const store = useStore()
     const route = useRoute()
     const router = useRouter()
+    const { notifySuccess, notifyError } = useNotyf()
     
     const loading = ref(false)
     // Onglets
@@ -582,6 +720,16 @@ export default {
       return pages.filter(p => p !== '...' || pages.indexOf(p) === pages.lastIndexOf(p))
     })
 
+    // Computed property pour le conseil actif
+    const activeCouncil = computed(() => {
+      return availableCouncils.value.find(council => council.status === 'active')
+    })
+
+    // Computed property pour le conseil inactif
+    const inactiveCouncil = computed(() => {
+      return availableCouncils.value.find(council => council.status === 'inactive')
+    })
+
     // Modal and creation/editing of BoardDirector
     const showModal = ref(false)
     const isEditing = ref(false)
@@ -597,6 +745,56 @@ export default {
     // Modal de remplacement
     const showReplacementModal = ref(false)
     const selectedDirectorForReplacement = ref(null)
+
+    // Variables pour la désactivation du conseil
+    const councilToDeactivate = ref(null)
+
+    // Variables pour le formulaire BoardCouncil
+    const loadingBoardCouncil = ref(false)
+    const boardCouncilForm = ref({
+      start_date: '',
+      end_date: '',
+      duration_months: null,
+      date_installation: '',
+      reference_decret: '',
+      pv_installation: '',
+      status: 'active',
+      entity_id: null
+    })
+
+    // Fonction pour calculer la durée en mois
+    const calculateDurationMonths = () => {
+      const startDate = boardCouncilForm.value.start_date
+      const endDate = boardCouncilForm.value.end_date
+      
+      if (!startDate || !endDate) {
+        boardCouncilForm.value.duration_months = null
+        return
+      }
+      
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      
+      if (isNaN(start) || isNaN(end) || end < start) {
+        boardCouncilForm.value.duration_months = 0
+        return
+      }
+      
+      let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+      
+      // Ajustement selon le jour
+      if (end.getDate() >= start.getDate()) {
+        // Garder le nombre de mois
+      } else {
+        months -= 1
+      }
+      
+      boardCouncilForm.value.duration_months = months >= 0 ? months : 0
+    }
+
+    // Watchers pour calculer automatiquement la durée
+    watch(() => boardCouncilForm.value.start_date, calculateDurationMonths)
+    watch(() => boardCouncilForm.value.end_date, calculateDurationMonths)
 
     const form = ref({
       nom_prenom: '',
@@ -926,6 +1124,182 @@ export default {
       // Optionnel : recharger les données du conseil si nécessaire
     }
 
+    // Méthodes pour les nouveaux boutons BoardCouncil
+    const showBoardCouncilModal = () => {
+      const entityId = props.entityId || route.params.id
+      if (!entityId) {
+        notifyError('Aucune entité trouvée')
+        return
+      }
+
+      // Réinitialiser le formulaire
+      boardCouncilForm.value = {
+        start_date: '',
+        end_date: '',
+        duration_months: null,
+        date_installation: '',
+        reference_decret: '',
+        pv_installation: '',
+        status: 'active',
+        entity_id: entityId
+      }
+
+      // Ouvrir le modal
+      setTimeout(() => {
+        const modalElement = document.getElementById('boardCouncilModal')
+        if (modalElement) {
+          const modal = Modal.getOrCreateInstance(modalElement)
+          modal.show()
+        }
+      }, 100)
+    }
+
+    // Méthode pour sauvegarder un nouveau BoardCouncil
+    const saveBoardCouncil = async () => {
+      if (loadingBoardCouncil.value) return
+
+      // Validation basique
+      if (!boardCouncilForm.value.start_date) {
+        notifyError('Veuillez saisir une date de début')
+        return
+      }
+
+      if (!boardCouncilForm.value.end_date) {
+        notifyError('Veuillez saisir une date de fin')
+        return
+      }
+
+      if (boardCouncilForm.value.end_date <= boardCouncilForm.value.start_date) {
+        notifyError('La date de fin doit être postérieure à la date de début')
+        return
+      }
+
+      if (boardCouncilForm.value.date_installation && boardCouncilForm.value.date_installation > boardCouncilForm.value.start_date) {
+        notifyError('La date d\'installation ne peut pas être postérieure à la date de début')
+        return
+      }
+
+      loadingBoardCouncil.value = true
+      try {
+        const payload = {
+          start_date: boardCouncilForm.value.start_date,
+          end_date: boardCouncilForm.value.end_date,
+          duration_months: boardCouncilForm.value.duration_months || null,
+          date_installation: boardCouncilForm.value.date_installation || null,
+          reference_decret: boardCouncilForm.value.reference_decret || null,
+          pv_installation: boardCouncilForm.value.pv_installation || null,
+          status: boardCouncilForm.value.status,
+          entity_id: props.entityId || route.params.id
+        }
+
+        await store.dispatch('boardCouncils/createBoardCouncil', payload)
+        
+        // Fermer le modal
+        const modalElement = document.getElementById('boardCouncilModal')
+        if (modalElement) {
+          const modal = Modal.getInstance(modalElement)
+          if (modal) modal.hide()
+        }
+
+        // Recharger les données
+        await load()
+        
+        notifySuccess('Conseil d\'administration créé avec succès')
+      } catch (error) {
+        console.error('Erreur lors de la création du conseil:', error)
+        notifyError('Erreur lors de la création du conseil d\'administration')
+      } finally {
+        loadingBoardCouncil.value = false
+      }
+    }
+
+    // Méthode pour confirmer la désactivation du conseil actuel
+    const confirmDeactivateCouncil = (council) => {
+      councilToDeactivate.value = council
+      // Ouvrir le modal de confirmation
+      const modalElement = document.getElementById('deactivateCouncilModal')
+      if (modalElement) {
+        const modal = new Modal(modalElement)
+        modal.show()
+      }
+    }
+
+    // Variable pour l'activation du conseil
+    const councilToActivate = ref(null)
+
+    // Méthode pour confirmer l'activation du conseil inactif
+    const confirmActivateCouncil = (council) => {
+      councilToActivate.value = council
+      // Ouvrir le modal de confirmation
+      const modalElement = document.getElementById('activateCouncilModal')
+      if (modalElement) {
+        const modal = new Modal(modalElement)
+        modal.show()
+      }
+    }
+
+    // Méthode pour désactiver le conseil
+    const deactivateCouncil = async () => {
+      if (!councilToDeactivate.value) return
+
+      try {
+        loading.value = true
+        await store.dispatch('boardCouncils/updateBoardCouncil', {
+          id: councilToDeactivate.value.id,
+          payload: { status: 'inactive' }
+        })
+
+        // Fermer le modal
+        const modalElement = document.getElementById('deactivateCouncilModal')
+        if (modalElement) {
+          const modal = Modal.getInstance(modalElement)
+          if (modal) modal.hide()
+        }
+
+        // Recharger les données
+        await load()
+        
+        notifySuccess('Conseil désactivé avec succès')
+      } catch (error) {
+        console.error('Erreur lors de la désactivation:', error)
+        notifyError('Erreur lors de la désactivation du conseil')
+      } finally {
+        loading.value = false
+        councilToDeactivate.value = null
+      }
+    }
+
+    // Méthode pour activer le conseil
+    const activateCouncil = async () => {
+      if (!councilToActivate.value) return
+
+      try {
+        loading.value = true
+        await store.dispatch('boardCouncils/updateBoardCouncil', {
+          id: councilToActivate.value.id,
+          payload: { status: 'active' }
+        })
+
+        // Fermer le modal
+        const modalElement = document.getElementById('activateCouncilModal')
+        if (modalElement) {
+          const modal = Modal.getInstance(modalElement)
+          if (modal) modal.hide()
+        }
+
+        // Recharger les données
+        await load()
+        
+        notifySuccess('Conseil activé avec succès')
+      } catch (error) {
+        console.error('Erreur lors de l\'activation:', error)
+        notifyError('Erreur lors de l\'activation du conseil')
+      } finally {
+        loading.value = false
+        councilToActivate.value = null
+      }
+    }
+
     // Watcher pour recharger les données quand le councilId change
     watch(() => route.params.councilId, (newCouncilId, oldCouncilId) => {
       if (newCouncilId && newCouncilId !== oldCouncilId) {
@@ -993,7 +1367,22 @@ export default {
       openReplacementModal,
       closeReplacementModal,
       onDirectorReplaced,
-      openHistoryModal
+      openHistoryModal,
+      // nouvelles méthodes BoardCouncil
+      activeCouncil,
+      inactiveCouncil,
+      showBoardCouncilModal,
+      confirmDeactivateCouncil,
+      deactivateCouncil,
+      councilToDeactivate,
+      confirmActivateCouncil,
+      activateCouncil,
+      councilToActivate,
+      // variables et méthodes pour création BoardCouncil
+      loadingBoardCouncil,
+      boardCouncilForm,
+      saveBoardCouncil,
+      calculateDurationMonths
     }
   }
 }

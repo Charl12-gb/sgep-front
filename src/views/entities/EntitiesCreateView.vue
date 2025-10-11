@@ -52,7 +52,7 @@
                   />
                 </div>
                 
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="type" class="form-label fw-semibold">
                     Type d'entité <span class="text-danger">*</span>
                   </label>
@@ -68,32 +68,7 @@
                   </select>
                 </div>
                 
-                <div class="col-md-6">
-                  <label for="secteur_activite" class="form-label fw-semibold">Secteur d'activité</label>
-                  <select
-                    id="secteur_activite"
-                    v-model="form.secteur_activite"
-                    class="form-select"
-                  >
-                    <option value="">Sélectionner un secteur</option>
-                    <option value="Public">Public</option>
-                    <option value="Privé">Privé</option>
-                    <option value="Mixte">Mixte</option>
-                    <option value="Industrie">Industrie</option>
-                    <option value="Services">Services</option>
-                    <option value="Commerce">Commerce</option>
-                    <option value="Agriculture">Agriculture</option>
-                    <option value="BTP">BTP</option>
-                    <option value="Transport">Transport</option>
-                    <option value="Énergie">Énergie</option>
-                    <option value="Santé">Santé</option>
-                    <option value="Éducation">Éducation</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Technologie">Technologie</option>
-                  </select>
-                </div>
-                
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="tutelle" class="form-label fw-semibold">Tutelle</label>
                   <input
                     id="tutelle"
@@ -104,7 +79,7 @@
                   />
                 </div>
                 
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <label for="capital_social" class="form-label fw-semibold">Capital social / Dotation initiale (XOF)</label>
                   <input
                     id="capital_social"
@@ -188,6 +163,68 @@
         
         <!-- Actions -->
         <div class="col-lg-4">
+          <!-- Card Secteur d'activité -->
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+              <h6 class="mb-0 fw-semibold">Secteur d'activité <span class="text-danger">*</span></h6>
+            </div>
+            <div class="card-body">
+              <select
+                id="secteur_activite"
+                v-model="selectedSectors"
+                class="form-select"
+                multiple
+                size="6"
+                style="height: 140px;"
+                required
+              >
+                <option value="Public">Public</option>
+                <option value="Privé">Privé</option>
+                <option value="Mixte">Mixte</option>
+                <option value="Industrie">Industrie</option>
+                <option value="Services">Services</option>
+                <option value="Commerce">Commerce</option>
+                <option value="Agriculture">Agriculture</option>
+                <option value="BTP">BTP</option>
+                <option value="Transport">Transport</option>
+                <option value="Énergie">Énergie</option>
+                <option value="Santé">Santé</option>
+                <option value="Éducation">Éducation</option>
+                <option value="Finance">Finance</option>
+                <option value="Technologie">Technologie</option>
+              </select>
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>
+                Maintenez Ctrl/Cmd pour sélectionner plusieurs secteurs
+              </div>
+              
+              <!-- Affichage du format final -->
+              <div v-if="selectedSectors.length > 0" class="mt-3">
+                <small class="text-muted d-block mb-1">Format final :</small>
+                <div class="p-2 bg-light border rounded">
+                  <code class="text-primary">{{ selectedSectors.join('/') }}</code>
+                </div>
+                <div class="mt-2">
+                  <span 
+                    v-for="secteur in selectedSectors" 
+                    :key="secteur" 
+                    class="sector-badge me-1 mb-1"
+                  >
+                    {{ secteur }}
+                    <button 
+                      type="button" 
+                      @click="removeSector(secteur)"
+                      class="btn btn-sm ms-1 p-0"
+                      style="background: none; border: none; color: inherit; font-size: 0.75rem;"
+                    >
+                      ×
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <!-- Card Effectifs ajoutée -->
           <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3">
@@ -287,6 +324,9 @@ export default {
       description: ''
     })
     
+    // Variable séparée pour gérer la sélection multiple
+    const selectedSectors = ref([])
+    
     // Ajout de la liste d'effectifs
     const effectifs = ref([])
 
@@ -316,7 +356,17 @@ export default {
     const handleSubmit = async () => {
       loading.value = true
       try {
+        // Validation du secteur d'activité
+        if (selectedSectors.value.length === 0) {
+          notifyError('Veuillez sélectionner au moins un secteur d\'activité')
+          loading.value = false
+          return
+        }
+        
         const formData = { ...form.value }
+        
+        // Convertir les secteurs sélectionnés en chaîne avec "/"
+        formData.secteur_activite = selectedSectors.value.join('/')
         
         // Nettoyer les champs vides
         Object.keys(formData).forEach(key => {
@@ -338,7 +388,24 @@ export default {
         const result = await store.dispatch('entities/createEntity', formData)
         if (result.success) {
           notifySuccess('Entité créée avec succès')
-          router.push('/entities')
+          
+          // Recharger la liste des entités pour inclure la nouvelle entité
+          await store.dispatch('entities/fetchEntities')
+          
+          // Si on a l'ID de la nouvelle entité, la sélectionner automatiquement
+          if (result.data && result.data.id) {
+            await store.dispatch('entities/selectEntityById', result.data.id)
+            
+            // Forcer le rechargement de l'entité complète avec ses stats
+            await store.dispatch('entities/fetchEntityById', result.data.id)
+            await store.dispatch('entities/fetchEntityStats', result.data.id)
+          }
+          
+          // Petit délai pour s'assurer que toutes les actions sont terminées
+          await new Promise(resolve => setTimeout(resolve, 100))
+          
+          // Rediriger vers le dashboard
+          router.push('/dashboard')
         } else {
           notifyError(result.message || 'Erreur lors de la création')
         }
@@ -353,6 +420,13 @@ export default {
       router.go(-1)
     }
     
+    const removeSector = (sectorToRemove) => {
+      const index = selectedSectors.value.indexOf(sectorToRemove)
+      if (index > -1) {
+        selectedSectors.value.splice(index, 1)
+      }
+    }
+    
     return {
       form,
       loading,
@@ -361,9 +435,56 @@ export default {
       effectifs,
       addEffectif,
       removeEffectif,
-      updateTotal
+      updateTotal,
+      selectedSectors,
+      removeSector
     }
   }
 }
 </script>
+
+<style scoped>
+/* Amélioration de l'apparence du select multiple */
+select[multiple] {
+  border: 2px solid #e9ecef;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
+select[multiple]:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+select[multiple] option {
+  padding: 0.375rem 0.5rem;
+  margin: 0.125rem 0;
+  border-radius: 0.25rem;
+}
+
+select[multiple] option:hover {
+  background-color: #f8f9fa;
+}
+
+select[multiple] option:checked {
+  background-color: #0d6efd;
+  color: white;
+}
+
+/* Style pour les badges des secteurs sélectionnés */
+.selected-sectors {
+  margin-top: 0.5rem;
+}
+
+.sector-badge {
+  display: inline-block;
+  background-color: #e7f3ff;
+  color: #0066cc;
+  padding: 0.25rem 0.5rem;
+  margin: 0.125rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  border: 1px solid #b3d9ff;
+}
+</style>
 
