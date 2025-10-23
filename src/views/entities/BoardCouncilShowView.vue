@@ -505,9 +505,9 @@
                   <input type="date" v-model="boardCouncilForm.date_installation" class="form-control">
                 </div>
                 <div class="col-12">
-                  <label class="form-label fw-semibold">Référence du décret</label>
+                  <label class="form-label fw-semibold">Référence du décret <span class="text-danger">*</span></label>
                   <input type="text" v-model="boardCouncilForm.reference_decret" class="form-control" 
-                    placeholder="Référence du décret de nomination...">
+                    placeholder="Référence du décret de nomination..." required>
                 </div>
                 <div class="col-12">
                   <label class="form-label fw-semibold">PV d'installation</label>
@@ -1179,6 +1179,11 @@ export default {
         return
       }
 
+      if (!boardCouncilForm.value.reference_decret || boardCouncilForm.value.reference_decret.trim() === '') {
+        notifyError('Veuillez saisir une référence de décret')
+        return
+      }
+
       loadingBoardCouncil.value = true
       try {
         const payload = {
@@ -1186,7 +1191,7 @@ export default {
           end_date: boardCouncilForm.value.end_date,
           duration_months: boardCouncilForm.value.duration_months || null,
           date_installation: boardCouncilForm.value.date_installation || null,
-          reference_decret: boardCouncilForm.value.reference_decret || null,
+          reference_decret: boardCouncilForm.value.reference_decret.trim(),
           pv_installation: boardCouncilForm.value.pv_installation || null,
           status: boardCouncilForm.value.status,
           entity_id: props.entityId || route.params.id

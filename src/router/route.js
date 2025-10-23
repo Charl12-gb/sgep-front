@@ -49,6 +49,15 @@ const dashboardRoutes = [
 // Entities routes
 const entityRoutes = [
   {
+    path: '/entities',
+    name: 'EntitiesList',
+    component: () => import('@/views/entities/EntitiesListView.vue'),
+    meta: { 
+      requiresAuth: true,
+      breadcrumb: 'Gestion des entités'
+    }
+  },
+  {
     path: '/entities/create',
     name: 'EntitiesCreate',
     component: () => import('@/views/entities/EntitiesCreateView.vue'),

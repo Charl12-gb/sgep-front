@@ -3,6 +3,7 @@ import { localStorageUtil, STORAGE_KEYS } from '@/utils/localStorage'
 
 const state = {
   entities: [],
+  headerEntities: [], // Nouvelle propriété pour les entités du header
   entity: null,
   selectedEntity: localStorageUtil.get(STORAGE_KEYS.SELECTED_ENTITY, null),
   entityStats: null,
@@ -48,6 +49,9 @@ const state = {
 const mutations = {
   SET_ENTITIES(state, entities) {
     state.entities = entities
+  },
+  SET_HEADER_ENTITIES(state, entities) {
+    state.headerEntities = entities
   },
   SET_ENTITY(state, entity) {
     state.entity = entity
@@ -158,8 +162,13 @@ const actions = {
   
   // Action pour sélectionner une entité par ID
   async selectEntityById({ commit, state, dispatch }, entityId) {
-    // Chercher d'abord dans les entités déjà chargées
-    let entity = state.entities.find(e => e.id === parseInt(entityId))
+    // Chercher d'abord dans les entités du header (toujours disponibles sans filtres)
+    let entity = state.headerEntities.find(e => e.id === entityId || e.id === parseInt(entityId))
+    
+    // Si pas trouvée dans le header, chercher dans les entités filtrées
+    if (!entity) {
+      entity = state.entities.find(e => e.id === entityId || e.id === parseInt(entityId))
+    }
     
     if (!entity) {
       // Si pas trouvée, la charger depuis l'API
@@ -214,6 +223,17 @@ const actions = {
       throw error
     } finally {
       commit('SET_LOADING', false)
+    }
+  },
+
+  async fetchHeaderEntities({ commit }) {
+    try {
+      const response = await api.get('/entities/header-list')
+      commit('SET_HEADER_ENTITIES', response.data)
+      return response.data
+    } catch (error) {
+      commit('SET_ERROR', error.message)
+      throw error
     }
   },
 
@@ -319,10 +339,12 @@ const actions = {
 
 
 
-  async createEntity({ commit }, entityData) {
+  async createEntity({ commit, dispatch }, entityData) {
     commit('SET_LOADING', true)
     try {
       const response = await api.post('/entities/', entityData)
+      // Rafraîchir la liste des entités du header après création
+      await dispatch('fetchHeaderEntities')
       return { success: true, data: response.data }
     } catch (error) {
       commit('SET_ERROR', error.message)
@@ -332,11 +354,13 @@ const actions = {
     }
   },
 
-  async updateEntity({ commit }, { id, data }) {
+  async updateEntity({ commit, dispatch }, { id, data }) {
     commit('SET_LOADING', true)
     try {
       const response = await api.put(`/entities/${id}`, data)
       commit('SET_ENTITY', response.data)
+      // Rafraîchir la liste des entités du header après mise à jour
+      await dispatch('fetchHeaderEntities')
       return { success: true, data: response.data }
     } catch (error) {
       commit('SET_ERROR', error.message)
@@ -346,10 +370,12 @@ const actions = {
     }
   },
 
-  async deleteEntity({ commit }, id) {
+  async deleteEntity({ commit, dispatch }, id) {
     commit('SET_LOADING', true)
     try {
       await api.delete(`/entities/${id}`)
+      // Rafraîchir la liste des entités du header après suppression
+      await dispatch('fetchHeaderEntities')
       return { success: true }
     } catch (error) {
       commit('SET_ERROR', error.message)
@@ -365,17 +391,26 @@ const actions = {
       // D'abord essayer de charger l'entité sélectionnée depuis localStorage (au cas où on aurait juste l'ID)
       let selectedEntity = await dispatch('loadSelectedEntity')
       
-      // Charger les entités disponibles
+      // Charger les entités pour le header (sans filtres)
+      await dispatch('fetchHeaderEntities')
+      
+      // Charger les entités disponibles pour la liste (avec filtres potentiels)
       await dispatch('fetchEntities', { per_page: 100 })
       
-      // Si on n'avait pas trouvé l'entité avant, réessayer maintenant qu'on a la liste
-      if (!selectedEntity) {
-        selectedEntity = await dispatch('loadSelectedEntity')
+      // Si on n'avait pas trouvé l'entité avant, chercher dans les entités du header
+      if (!selectedEntity && state.headerEntities.length > 0) {
+        const savedEntityId = localStorageUtil.get(STORAGE_KEYS.SELECTED_ENTITY_ID)
+        if (savedEntityId) {
+          selectedEntity = state.headerEntities.find(e => e.id === savedEntityId)
+          if (selectedEntity) {
+            await dispatch('selectEntity', selectedEntity)
+          }
+        }
       }
       
-      // Si toujours aucune entité sélectionnée, prendre la première
-      if (!selectedEntity && state.entities.length > 0) {
-        const firstEntity = state.entities[0]
+      // Si toujours aucune entité sélectionnée, prendre la première du header
+      if (!selectedEntity && state.headerEntities.length > 0) {
+        const firstEntity = state.headerEntities[0]
         await dispatch('selectEntity', firstEntity)
         selectedEntity = firstEntity
       }
@@ -390,6 +425,7 @@ const actions = {
 
 const getters = {
   entities: state => state.entities,
+  headerEntities: state => state.headerEntities,
   entity: state => state.entity,
   selectedEntity: state => state.selectedEntity,
   entityStats: state => state.entityStats,

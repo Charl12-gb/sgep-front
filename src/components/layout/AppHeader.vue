@@ -89,6 +89,15 @@
               </button>
               
               <ul v-if="showUserMenu" class="dropdown-menu dropdown-menu-end show">
+                <li v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')">
+                  <router-link to="/entities" class="dropdown-item" @click="showUserMenu = false">
+                    <i class="fas fa-building me-2"></i>
+                    Gestion des Entités
+                  </router-link>
+                </li>
+                <li v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')">
+                  <hr class="dropdown-divider">
+                </li>
                 <li>
                   <button @click="logout" class="dropdown-item text-danger">
                     <i class="fas fa-sign-out-alt me-2"></i>
@@ -115,6 +124,12 @@
               <ul v-if="mobileSubmenus.entities" class="list-unstyled ms-4 mt-2">
                 <li><router-link to="/entities/create" class="mobile-submenu-link" @click="closeMobileMenu">Nouvelle entité</router-link></li>
               </ul>
+            </li>
+            <li class="mb-2" v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')">
+              <router-link to="/entities" class="mobile-nav-link" @click="closeMobileMenu">
+                <i class="fas fa-building me-2"></i>
+                Gestion des Entités
+              </router-link>
             </li>
             <li class="mb-2" v-if="user && (user.role.name === 'Super Administrateur' || user.role.name === 'Administrateur')">
               <router-link to="/reports-extended" class="mobile-nav-link" @click="closeMobileMenu">
@@ -161,7 +176,7 @@ export default {
     })
     
     const user = computed(() => store.getters['auth/user'])
-    const availableEntities = computed(() => store.getters['entities/entities'])
+    const availableEntities = computed(() => store.getters['entities/headerEntities'])
     const selectedEntity = computed(() => store.getters['entities/selectedEntity'])
 
 

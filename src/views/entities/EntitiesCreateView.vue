@@ -174,24 +174,23 @@
                 v-model="selectedSectors"
                 class="form-select"
                 multiple
-                size="6"
-                style="height: 140px;"
+                size="8"
+                style="height: 200px;"
                 required
               >
-                <option value="Public">Public</option>
-                <option value="Privé">Privé</option>
-                <option value="Mixte">Mixte</option>
-                <option value="Industrie">Industrie</option>
-                <option value="Services">Services</option>
-                <option value="Commerce">Commerce</option>
-                <option value="Agriculture">Agriculture</option>
-                <option value="BTP">BTP</option>
-                <option value="Transport">Transport</option>
-                <option value="Énergie">Énergie</option>
-                <option value="Santé">Santé</option>
-                <option value="Éducation">Éducation</option>
-                <option value="Finance">Finance</option>
-                <option value="Technologie">Technologie</option>
+                <optgroup 
+                  v-for="(sectors, categoryName) in sectorsByCategory" 
+                  :key="categoryName" 
+                  :label="categoryName"
+                >
+                  <option 
+                    v-for="sector in sectors" 
+                    :key="sector" 
+                    :value="sector"
+                  >
+                    {{ sector }}
+                  </option>
+                </optgroup>
               </select>
               <div class="form-text">
                 <i class="fas fa-info-circle me-1"></i>
@@ -302,6 +301,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { useNotyf } from '@/mixins/useNotyf'
+import { getSectorsByCategory, getAllSectors } from '@/utils/sectorsHelper'
+import { debugSectors } from '@/utils/debugSectors'
 
 export default {
   name: 'EntitiesCreateView',
@@ -326,6 +327,15 @@ export default {
     
     // Variable séparée pour gérer la sélection multiple
     const selectedSectors = ref([])
+    
+    // Import des secteurs depuis le helper
+    const sectorsByCategory = getSectorsByCategory()
+    
+    // Debug en développement
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Debug secteurs dans EntitiesCreateView:')
+      debugSectors()
+    }
     
     // Ajout de la liste d'effectifs
     const effectifs = ref([])
@@ -437,7 +447,8 @@ export default {
       removeEffectif,
       updateTotal,
       selectedSectors,
-      removeSector
+      removeSector,
+      sectorsByCategory
     }
   }
 }
@@ -469,6 +480,19 @@ select[multiple] option:hover {
 select[multiple] option:checked {
   background-color: #0d6efd;
   color: white;
+}
+
+/* Style pour les optgroups */
+select[multiple] optgroup {
+  font-weight: bold;
+  color: #495057;
+  background-color: #f8f9fa;
+  font-size: 0.875rem;
+}
+
+select[multiple] optgroup option {
+  font-weight: normal;
+  padding-left: 1rem;
 }
 
 /* Style pour les badges des secteurs sélectionnés */

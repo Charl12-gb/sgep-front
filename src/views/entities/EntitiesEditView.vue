@@ -85,34 +85,7 @@
                     <div v-if="errors.type" class="invalid-feedback">{{ errors.type }}</div>
                   </div>
                   
-                  <div class="col-md-6">
-                    <label for="secteur_activite" class="form-label fw-semibold">Secteur d'activité</label>
-                    <select
-                      id="secteur_activite"
-                      v-model="form.secteur_activite"
-                      class="form-select"
-                      :class="{ 'is-invalid': errors.secteur_activite }"
-                    >
-                      <option value="">Sélectionner un secteur</option>
-                      <option value="Public">Public</option>
-                      <option value="Privé">Privé</option>
-                      <option value="Mixte">Mixte</option>
-                      <option value="Industrie">Industrie</option>
-                      <option value="Services">Services</option>
-                      <option value="Commerce">Commerce</option>
-                      <option value="Agriculture">Agriculture</option>
-                      <option value="BTP">BTP</option>
-                      <option value="Transport">Transport</option>
-                      <option value="Énergie">Énergie</option>
-                      <option value="Santé">Santé</option>
-                      <option value="Éducation">Éducation</option>
-                      <option value="Finance">Finance</option>
-                      <option value="Technologie">Technologie</option>
-                    </select>
-                    <div v-if="errors.secteur_activite" class="invalid-feedback">{{ errors.secteur_activite }}</div>
-                  </div>
-                  
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <label for="tutelle" class="form-label fw-semibold">Tutelle</label>
                     <input
                       id="tutelle"
@@ -125,7 +98,7 @@
                     <div v-if="errors.tutelle" class="invalid-feedback">{{ errors.tutelle }}</div>
                   </div>
                   
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <label for="capital_social" class="form-label fw-semibold">Capital social / Dotation initiale (XOF)</label>
                     <input
                       id="capital_social"
@@ -221,6 +194,69 @@
           
           <!-- Actions -->
           <div class="col-lg-4">
+            <!-- Card Secteur d'activité -->
+            <div class="card border-0 shadow-sm mb-4">
+              <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-semibold text-dark">Secteur d'activité <span class="text-danger">*</span></h6>
+              </div>
+              <div class="card-body">
+                <select
+                  id="secteur_activite"
+                  v-model="selectedSectors"
+                  class="form-select"
+                  multiple
+                  size="8"
+                  style="height: 200px;"
+                  :class="{ 'is-invalid': errors.secteur_activite }"
+                  required
+                >
+                  <optgroup 
+                    v-for="(sectors, categoryName) in sectorsByCategory" 
+                    :key="categoryName" 
+                    :label="categoryName"
+                  >
+                    <option 
+                      v-for="sector in sectors" 
+                      :key="sector" 
+                      :value="sector"
+                    >
+                      {{ sector }}
+                    </option>
+                  </optgroup>
+                </select>
+                <div class="form-text">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Maintenez Ctrl/Cmd pour sélectionner plusieurs secteurs
+                </div>
+                
+                <!-- Affichage du format final -->
+                <div v-if="selectedSectors.length > 0" class="mt-3">
+                  <small class="text-muted d-block mb-1">Format final :</small>
+                  <div class="p-2 bg-light border rounded">
+                    <code class="text-primary">{{ selectedSectors.join('/') }}</code>
+                  </div>
+                  <div class="mt-2">
+                    <span 
+                      v-for="secteur in selectedSectors" 
+                      :key="secteur" 
+                      class="sector-badge me-1 mb-1"
+                    >
+                      {{ secteur }}
+                      <button 
+                        type="button" 
+                        @click="removeSector(secteur)"
+                        class="btn btn-sm ms-1 p-0"
+                        style="background: none; border: none; color: inherit; font-size: 0.75rem;"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  </div>
+                </div>
+                <div v-if="errors.secteur_activite" class="text-danger small mt-2">{{ errors.secteur_activite }}</div>
+              </div>
+            </div>
+            
             <!-- Card Effectifs ajoutée -->
             <div class="card border-0 shadow-sm mb-4">
               <div class="card-header bg-white py-3 border-bottom">
@@ -244,7 +280,7 @@
                     <label class="form-label small mb-1">Femmes</label>
                     <div class="input-group">
                       <input type="number" v-model.number="eff.nombre_femme" class="form-control" min="0" required @input="updateTotal(idx)" />
-                      <button type="button" class="btn btn-outline-danger btn-sm" @click="removeEffectif(idx)">
+                      <button type="button" class="btn btn-outline-danger btn-sm" @click="confirmDeleteEffectif(eff, idx)">
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
@@ -307,6 +343,36 @@
         Retour à la liste
       </router-link>
     </div>
+    
+    <!-- Modal de confirmation de suppression d'effectif -->
+    <div class="modal fade" id="deleteEffectifModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmer la suppression</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir supprimer cet effectif ?</p>
+            <div v-if="effectifToDelete" class="alert alert-warning">
+              <strong>Année {{ effectifToDelete.effectif?.annee }}</strong> - 
+              {{ effectifToDelete.effectif?.nombre_total }} employé(s)
+            </div>
+            <p class="text-danger small mb-0">
+              <i class="fas fa-exclamation-triangle me-1"></i>
+              Cette action est irréversible.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" @click="deleteEffectif" class="btn btn-danger" :disabled="deletingEffectif">
+              <i v-if="deletingEffectif" class="fas fa-spinner fa-spin me-1"></i>
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -315,6 +381,8 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { useNotyf } from '@/mixins/useNotyf'
+import { Modal } from 'bootstrap'
+import { getSectorsByCategory } from '@/utils/sectorsHelper'
 
 export default {
   name: 'EntitiesEditView',
@@ -326,7 +394,10 @@ export default {
     
     const loading = ref(false)
     const submitting = ref(false)
+    const deletingEffectif = ref(false)
+    const effectifToDelete = ref(null)
     const errors = reactive({})
+    let deleteEffectifModalInstance = null
     
     const form = reactive({
       name: '',
@@ -342,6 +413,12 @@ export default {
       description: ''
     })
     
+    // Variable séparée pour gérer la sélection multiple des secteurs
+    const selectedSectors = ref([])
+    
+    // Import des secteurs depuis le helper
+    const sectorsByCategory = getSectorsByCategory()
+    
     // Ajout de la gestion des effectifs
     const effectifs = ref([])
     
@@ -355,7 +432,48 @@ export default {
       })
     }
     
-    // Méthode pour retirer une ligne d'effectif
+    // Méthode pour confirmer la suppression d'une ligne d'effectif
+    const confirmDeleteEffectif = (effectif, idx) => {
+      effectifToDelete.value = { effectif, idx }
+      
+      if (!deleteEffectifModalInstance) {
+        deleteEffectifModalInstance = new Modal(document.getElementById('deleteEffectifModal'))
+      }
+      deleteEffectifModalInstance.show()
+    }
+    
+    // Méthode pour supprimer un effectif
+    const deleteEffectif = async () => {
+      if (!effectifToDelete.value) return
+      
+      const { effectif, idx } = effectifToDelete.value
+      deletingEffectif.value = true
+      
+      try {
+        // Si l'effectif a un ID, le supprimer en base de données
+        if (effectif.id) {
+          await store.dispatch('effectifs/deleteEffectif', effectif.id)
+          notifySuccess('Effectif supprimé avec succès')
+        }
+        
+        // Supprimer de la liste locale
+        effectifs.value.splice(idx, 1)
+        
+        // Fermer le modal
+        if (deleteEffectifModalInstance) {
+          deleteEffectifModalInstance.hide()
+        }
+        effectifToDelete.value = null
+        
+      } catch (error) {
+        console.error('Erreur lors de la suppression de l\'effectif:', error)
+        notifyError('Erreur lors de la suppression de l\'effectif')
+      } finally {
+        deletingEffectif.value = false
+      }
+    }
+    
+    // Méthode pour retirer une ligne d'effectif (conservée pour compatibilité)
     const removeEffectif = (idx) => {
       effectifs.value.splice(idx, 1)
     }
@@ -389,6 +507,13 @@ export default {
             email: entity.value.email || '',
             description: entity.value.description || ''
           })
+          
+          // Initialiser les secteurs sélectionnés à partir de secteur_activite
+          if (entity.value.secteur_activite) {
+            selectedSectors.value = entity.value.secteur_activite.split('/')
+          } else {
+            selectedSectors.value = []
+          }
           
           // Charger les effectifs
           if (entity.value.effectifs && entity.value.effectifs.length > 0) {
@@ -436,17 +561,37 @@ export default {
         return
       }
       
+      // Validation du secteur d'activité
+      if (selectedSectors.value.length === 0) {
+        notifyError('Veuillez sélectionner au moins un secteur d\'activité')
+        return
+      }
+      
       submitting.value = true
       
       try {
         const formData = { ...form }
         
-        // Nettoyer les champs vides
-        Object.keys(formData).forEach(key => {
-          if (formData[key] === '' || formData[key] === null) {
-            delete formData[key]
-          }
-        })
+        // Convertir les secteurs sélectionnés en chaîne avec "/"
+        formData.secteur_activite = selectedSectors.value.join('/')
+        
+        // Pour la création seulement, nettoyer les champs vides (null uniquement)
+        // Pour la modification, garder tous les champs pour permettre de vider des valeurs
+        if (!isEdit.value) {
+          // En création : supprimer seulement les valeurs null
+          Object.keys(formData).forEach(key => {
+            if (formData[key] === null) {
+              delete formData[key]
+            }
+          })
+        } else {
+          // En modification : convertir les chaînes vides en null pour vider les champs
+          Object.keys(formData).forEach(key => {
+            if (formData[key] === '') {
+              formData[key] = null
+            }
+          })
+        }
         
         // Ajouter les effectifs au formData
         if (effectifs.value.length > 0) {
@@ -496,6 +641,13 @@ export default {
       router.go(-1)
     }
     
+    const removeSector = (sectorToRemove) => {
+      const index = selectedSectors.value.indexOf(sectorToRemove)
+      if (index > -1) {
+        selectedSectors.value.splice(index, 1)
+      }
+    }
+    
     onMounted(() => {
       loadEntity()
     })
@@ -505,14 +657,79 @@ export default {
       errors,
       loading,
       submitting,
+      deletingEffectif,
+      effectifToDelete,
       isEdit,
       submitForm,
       goBack,
       effectifs,
       addEffectif,
       removeEffectif,
-      updateTotal
+      confirmDeleteEffectif,
+      deleteEffectif,
+      updateTotal,
+      selectedSectors,
+      removeSector,
+      sectorsByCategory
     }
   }
 }
 </script>
+
+<style scoped>
+/* Amélioration de l'apparence du select multiple */
+select[multiple] {
+  border: 2px solid #e9ecef;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
+select[multiple]:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+select[multiple] option {
+  padding: 0.375rem 0.5rem;
+  margin: 0.125rem 0;
+  border-radius: 0.25rem;
+}
+
+select[multiple] option:hover {
+  background-color: #f8f9fa;
+}
+
+select[multiple] option:checked {
+  background-color: #0d6efd;
+  color: white;
+}
+
+/* Style pour les optgroups */
+select[multiple] optgroup {
+  font-weight: bold;
+  color: #495057;
+  background-color: #f8f9fa;
+  font-size: 0.875rem;
+}
+
+select[multiple] optgroup option {
+  font-weight: normal;
+  padding-left: 1rem;
+}
+
+/* Style pour les badges des secteurs sélectionnés */
+.selected-sectors {
+  margin-top: 0.5rem;
+}
+
+.sector-badge {
+  display: inline-block;
+  background-color: #e7f3ff;
+  color: #0066cc;
+  padding: 0.25rem 0.5rem;
+  margin: 0.125rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  border: 1px solid #b3d9ff;
+}
+</style>

@@ -5,8 +5,8 @@
       <div class="d-flex gap-2">
         <select v-model="filters.type" @change="applyFilters" class="form-select form-select-sm">
           <option value="">Tous les types</option>
-          <option value="Incumbent">Titulaire</option>
-          <option value="Representative">Suppléant</option>
+          <option value="Titulaire">Titulaire</option>
+          <option value="Suppléant">Suppléant</option>
         </select>
         <button class="btn btn-success btn-sm" @click="showModal()">
           <i class="fas fa-plus me-1"></i>
@@ -34,10 +34,10 @@
             <td>
               <span :class="{
                 'badge': true,
-                'bg-primary': officer.type === 'Incumbent',
-                'bg-secondary': officer.type === 'Representative'
+                'bg-primary': officer.type === 'Titulaire',
+                'bg-secondary': officer.type === 'Suppléant'
               }">
-                {{ officer.type === 'Incumbent' ? 'Titulaire' : 'Suppléant' }}
+                {{ officer.type }}
               </span>
             </td>
             <td>
@@ -110,18 +110,35 @@
                   <label for="cabinet" class="form-label fw-semibold">
                     Nom du cabinet <span class="text-danger">*</span>
                   </label>
-                  <input type="text" id="cabinet" v-model="form.cabinet" class="form-control" required>
+                  <input 
+                    type="text" 
+                    id="cabinet" 
+                    v-model="form.cabinet" 
+                    :class="['form-control', { 'is-invalid': formErrors.cabinet }]" 
+                    required
+                  >
+                  <div v-if="formErrors.cabinet" class="invalid-feedback">
+                    {{ formErrors.cabinet }}
+                  </div>
                 </div>
 
                 <div class="col-md-6">
                   <label for="type" class="form-label fw-semibold">
                     Type <span class="text-danger">*</span>
                   </label>
-                  <select id="type" v-model="form.type" class="form-select" required>
+                  <select 
+                    id="type" 
+                    v-model="form.type" 
+                    :class="['form-select', { 'is-invalid': formErrors.type }]" 
+                    required
+                  >
                     <option value="">Sélectionner</option>
-                    <option value="Incumbent">Titulaire</option>
-                    <option value="Representative">Suppléant</option>
+                    <option value="Titulaire">Titulaire</option>
+                    <option value="Suppléant">Suppléant</option>
                   </select>
+                  <div v-if="formErrors.type" class="invalid-feedback">
+                    {{ formErrors.type }}
+                  </div>
                 </div>
 
                 <div class="col-md-6">
@@ -133,7 +150,15 @@
 
                 <div class="col-md-6">
                   <label for="representant_email" class="form-label fw-semibold">Email du représentant</label>
-                  <input type="email" id="representant_email" v-model="form.representant_email" class="form-control">
+                  <input 
+                    type="email" 
+                    id="representant_email" 
+                    v-model="form.representant_email" 
+                    :class="['form-control', { 'is-invalid': formErrors.representant_email }]"
+                  >
+                  <div v-if="formErrors.representant_email" class="invalid-feedback">
+                    {{ formErrors.representant_email }}
+                  </div>
                 </div>
 
                 <div class="col-md-6">
@@ -149,7 +174,15 @@
 
                 <div class="col-md-6">
                   <label for="mandat_date_fin" class="form-label fw-semibold">Date de fin mandat</label>
-                  <input type="date" id="mandat_date_fin" v-model="form.mandat_date_fin" class="form-control">
+                  <input 
+                    type="date" 
+                    id="mandat_date_fin" 
+                    v-model="form.mandat_date_fin" 
+                    :class="['form-control', { 'is-invalid': formErrors.mandat_date_fin }]"
+                  >
+                  <div v-if="formErrors.mandat_date_fin" class="invalid-feedback">
+                    {{ formErrors.mandat_date_fin }}
+                  </div>
                 </div>
               </div>
 
@@ -225,6 +258,7 @@ export default {
     const isEditing = ref(false)
     const itemToDelete = ref(null)
     const { notifyError, notifySuccess } = useNotyf()
+    const formErrors = ref({})
 
     const form = ref({
       id: null,
@@ -258,6 +292,42 @@ export default {
         mandat_date_debut: '',
         mandat_date_fin: ''
       })
+      formErrors.value = {}
+    }
+
+    const validateForm = () => {
+      const errors = {}
+      
+      if (!form.value.cabinet?.trim()) {
+        errors.cabinet = 'Le nom du cabinet est requis'
+      }
+      
+      if (!form.value.type) {
+        errors.type = 'Le type de commissaire est requis'
+      } else if (!['Titulaire', 'Suppléant'].includes(form.value.type)) {
+        errors.type = 'Le type doit être "Titulaire" ou "Suppléant"'
+      }
+      
+      if (form.value.representant_email && !isValidEmail(form.value.representant_email)) {
+        errors.representant_email = 'Format d\'email invalide'
+      }
+      
+      if (form.value.mandat_date_debut && form.value.mandat_date_fin) {
+        const dateDebut = new Date(form.value.mandat_date_debut)
+        const dateFin = new Date(form.value.mandat_date_fin)
+        
+        if (dateDebut >= dateFin) {
+          errors.mandat_date_fin = 'La date de fin doit être postérieure à la date de début'
+        }
+      }
+      
+      formErrors.value = errors
+      return Object.keys(errors).length === 0
+    }
+
+    const isValidEmail = (email) => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return emailRegex.test(email)
     }
 
     const showModal = (officer = null) => {
@@ -309,6 +379,13 @@ export default {
     }
 
     const save = async () => {
+      // Validation côté client
+      if (!validateForm()) {
+        const firstError = Object.values(formErrors.value)[0]
+        notifyError(firstError)
+        return
+      }
+      
       loading.value = true
       try {
         const formData = { ...form.value, entity_id: props.entityId }
@@ -336,7 +413,18 @@ export default {
         modal.hide()
       } catch (error) {
         console.error('Erreur lors de la sauvegarde:', error)
-        notifyError(error?.response?.data?.detail || 'Erreur lors de l\'enregistrement du commissaire')
+        
+        // Gestion des erreurs améliorée
+        let errorMessage = 'Erreur lors de l\'enregistrement du commissaire'
+        
+        if (error && error?.detail) {
+          errorMessage = error?.detail
+        } else if (error?.response?.data?.errors) {
+          const apiErrors = error.response.data.errors
+          errorMessage = Object.values(apiErrors).flat().join(' ')
+        }
+        
+        notifyError(errorMessage)
       } finally {
         loading.value = false
       }
@@ -389,12 +477,14 @@ export default {
       isEditing,
       itemToDelete,
       form,
+      formErrors,
       filteredOfficers,
       showModal,
       save,
       confirmDelete,
       deleteItem,
-      applyFilters
+      applyFilters,
+      validateForm
     }
   }
 }

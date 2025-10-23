@@ -59,7 +59,7 @@
                   <span class="badge" :class="director.sexe === 'Homme' ? 'bg-info' : 'bg-warning'">
                     {{ director.sexe }}
                   </span>
-                  <span v-if="director.age" class="ms-2">{{ director.age }} ans</span>
+                  <span v-if="calculateAge(director.date_naissance)" class="ms-2">{{ calculateAge(director.date_naissance) }} ans</span>
                   <span v-if="director.is_current_director" class="ms-2">
                     <i class="fas fa-star text-success" title="Directeur actuel"></i>
                   </span>
@@ -144,8 +144,8 @@
                 </div>
                 
                 <div class="col-md-4">
-                  <label for="age" class="form-label fw-semibold">Âge</label>
-                  <input type="number" id="age" v-model.number="form.age" class="form-control" min="18" max="100">
+                  <label for="date_naissance" class="form-label fw-semibold">Date de naissance</label>
+                  <input type="date" id="date_naissance" v-model="form.date_naissance" class="form-control" :max="today">
                 </div>
                 
                 <div class="col-md-6">
@@ -160,7 +160,7 @@
                 
                 <div class="col-md-6">
                   <label for="date_nomination" class="form-label fw-semibold">Date de nomination</label>
-                  <input type="date" id="date_nomination" v-model="form.date_nomination" class="form-control">
+                  <input type="date" id="date_nomination" v-model="form.date_nomination" class="form-control" :max="today">
                 </div>
                 
                 <div class="col-md-6 d-flex align-items-center">
@@ -264,7 +264,7 @@ export default {
       position: '',
       nom_prenom: '',
       sexe: '',
-      age: null,
+      date_naissance: null,
       profil_professionnel: '',
       email: '',
       telephone: '',
@@ -297,13 +297,29 @@ export default {
       return props.directors.filter(d => d.is_current_director === true)
     })
     
+    const today = computed(() => {
+      return new Date().toISOString().split('T')[0]
+    })
+    
+    const calculateAge = (birthDate) => {
+      if (!birthDate) return null
+      const birth = new Date(birthDate)
+      const today = new Date()
+      let age = today.getFullYear() - birth.getFullYear()
+      const monthDiff = today.getMonth() - birth.getMonth()
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--
+      }
+      return age
+    }
+    
     const resetForm = () => {
       Object.assign(form.value, {
         id: null,
         position: '',
         nom_prenom: '',
         sexe: '',
-        age: null,
+        date_naissance: null,
         profil_professionnel: '',
         email: '',
         telephone: '',
@@ -322,7 +338,7 @@ export default {
           position: director.position,
           nom_prenom: director.nom_prenom,
           sexe: director.sexe,
-          age: director.age,
+          date_naissance: director.date_naissance ? new Date(director.date_naissance).toISOString().split('T')[0] : null,
           profil_professionnel: director.profil_professionnel,
           email: director.email,
           telephone: director.telephone,
@@ -338,16 +354,20 @@ export default {
     }
     
     const save = async () => {
+      // Validation côté client
+      if (form.value.date_nomination && new Date(form.value.date_nomination) > new Date()) {
+        notifyError('La date de nomination ne peut pas être ultérieure à aujourd\'hui')
+        return
+      }
+      
+      if (form.value.date_naissance && new Date(form.value.date_naissance) > new Date()) {
+        notifyError('La date de naissance ne peut pas être ultérieure à aujourd\'hui')
+        return
+      }
+      
       loading.value = true
       try {
         const formData = { ...form.value, entity_id: props.entityId }
-        
-        // Nettoyer les champs vides
-        Object.keys(formData).forEach(key => {
-          if (formData[key] === '' || formData[key] === null) {
-            delete formData[key]
-          }
-        })
         
         // S'assurer que is_current_director est un booléen
         if (Object.prototype.hasOwnProperty.call(formData, 'is_current_director')) {
@@ -355,11 +375,38 @@ export default {
         }
 
         if (isEditing.value) {
+          // Pour la modification, on envoie tous les champs (même vides) pour permettre de vider des champs
+          // Convertir les chaînes vides en null pour les champs optionnels
+          const updateData = { ...formData }
+          
+          // Liste des champs texte optionnels qui peuvent être vidés
+          const optionalTextFields = ['profil_professionnel', 'email', 'telephone']
+          optionalTextFields.forEach(field => {
+            if (updateData[field] === '') {
+              updateData[field] = null
+            }
+          })
+          
+          // Liste des champs date optionnels qui peuvent être vidés
+          const optionalDateFields = ['date_naissance', 'date_nomination']
+          optionalDateFields.forEach(field => {
+            if (updateData[field] === '') {
+              updateData[field] = null
+            }
+          })
+          
           await store.dispatch('directionGenerale/updateDirectionGenerale', {
-            id: formData.id,
-            payload: formData
+            id: updateData.id,
+            payload: updateData
           })
         } else {
+          // Pour la création, on nettoie les champs vides seulement
+          Object.keys(formData).forEach(key => {
+            if (formData[key] === '' || formData[key] === null) {
+              delete formData[key]
+            }
+          })
+          
           await store.dispatch('directionGenerale/createDirectionGenerale', formData)
         }
 
@@ -439,6 +486,8 @@ export default {
       form,
       filteredDirectors,
       currentDirectors,
+      today,
+      calculateAge,
       showModal,
       save,
       setAsCurrent,
